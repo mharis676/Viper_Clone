@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           <Store size={22} />
         </div>
         <div>
-          <span className="sidebar-title">Vyapar</span>
+          <span className="sidebar-title">Viper</span>
           <span className="sidebar-badge" style={{ marginLeft: 6 }}>PRO</span>
         </div>
       </div>

@@ -51,6 +51,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         </button>
       </div>
 
+      <div className="action-row"><button className="btn btn-secondary" onClick={() => onOpenPurchaseModal('payment_out')}>+ Pay Supplier</button><button className="btn btn-secondary" onClick={() => onOpenPurchaseModal('purchase_return')}>+ Purchase Return</button></div>
       {/* Tabs and Search */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -97,9 +98,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 <th>Bill #</th>
                 <th>Supplier / Vendor</th>
                 <th>Payment Mode</th>
-                <th style={{ textAlign: 'right' }}>Total (₹)</th>
-                <th style={{ textAlign: 'right' }}>Paid (₹)</th>
-                <th style={{ textAlign: 'right' }}>Balance Due (₹)</th>
+                <th style={{ textAlign: 'right' }}>Total (PKR)</th>
+                <th style={{ textAlign: 'right' }}>Paid (PKR)</th>
+                <th style={{ textAlign: 'right' }}>Balance Due (PKR)</th>
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
@@ -120,9 +121,9 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                     </td>
                     <td style={{ fontWeight: 600 }}>{txn.partyName}</td>
                     <td style={{ textTransform: 'uppercase', fontSize: '0.8rem' }}>{txn.paymentMode}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{txn.total.toLocaleString()}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>PKR {txn.total.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</td>
                     <td style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 600 }}>
-                      ₹{txn.paidAmount.toLocaleString()}
+                      PKR {txn.paidAmount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                     </td>
                     <td
                       style={{
@@ -131,7 +132,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                         color: txn.balanceDue > 0 ? 'var(--danger)' : 'var(--text-secondary)',
                       }}
                     >
-                      ₹{txn.balanceDue.toLocaleString()}
+                      PKR {txn.balanceDue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                     </td>
                     <td>
                       <span className={`badge badge-${txn.status}`}>{txn.status}</span>

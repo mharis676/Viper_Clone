@@ -91,7 +91,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
             </div>
           </div>
           <div className="kpi-value" style={{ color: '#D32F2F' }}>
-            ₹{totalExpenseAmount.toLocaleString()}
+            PKR {totalExpenseAmount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Across {expenses.length} expense entries
@@ -110,7 +110,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 <th>Paid To / Vendor</th>
                 <th>Payment Mode</th>
                 <th>Notes / Remarks</th>
-                <th style={{ textAlign: 'right' }}>Amount (₹)</th>
+                <th style={{ textAlign: 'right' }}>Amount (PKR)</th>
                 <th style={{ textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
@@ -135,7 +135,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     <td style={{ textTransform: 'uppercase', fontSize: '0.8rem' }}>{exp.paymentMode}</td>
                     <td style={{ color: 'var(--text-secondary)' }}>{exp.notes || '-'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--danger)' }}>
-                      ₹{exp.amount.toLocaleString()}
+                      PKR {exp.amount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button
@@ -188,7 +188,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Expense Amount (₹) *</label>
+                  <label className="form-label">Expense Amount (PKR) *</label>
                   <input
                     type="number"
                     min="1"
@@ -220,7 +220,7 @@ export const ExpensesView: React.FC<ExpensesViewProps> = ({
                     >
                       {accounts.map((a) => (
                         <option key={a.id} value={a.id}>
-                          {a.name} (₹{a.balance.toLocaleString()})
+                          {a.name} (PKR {a.balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })})
                         </option>
                       ))}
                     </select>

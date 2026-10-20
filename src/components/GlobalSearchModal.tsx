@@ -119,7 +119,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     </div>
                   </div>
                   <div style={{ fontWeight: 700, color: p.currentBalance >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                    ₹{Math.abs(p.currentBalance).toLocaleString()}
+                    PKR {Math.abs(p.currentBalance).toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                   </div>
                 </div>
               ))}
@@ -156,7 +156,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Barcode: {i.barcode} • Stock: {i.currentStock} {i.unit}</div>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 700 }}>₹{i.salesPrice.toLocaleString()}</div>
+                  <div style={{ fontWeight: 700 }}>PKR {i.salesPrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
                 </div>
               ))}
             </div>
@@ -192,7 +192,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t.partyName} • {t.date}</div>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 700 }}>₹{t.total.toLocaleString()}</div>
+                  <div style={{ fontWeight: 700 }}>PKR {t.total.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
                 </div>
               ))}
             </div>

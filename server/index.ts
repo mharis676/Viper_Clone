@@ -1,12 +1,17 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { db } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost', 'https://localhost', 'http://localhost:3000', 'http://127.0.0.1:3000'] }));
 app.use(express.json({ limit: '10mb' }));
+// Remote deployments must configure an access token. Never embed it in the APK.
+app.use('/api', (req, res, next) => {
+  if (process.env.API_TOKEN && req.headers.authorization !== `Bearer ${process.env.API_TOKEN}`) return res.status(401).json({ error: 'Access token required' });
+  next();
+});
 
 // Health Check
 app.get('/api/health', (req: Request, res: Response) => {
@@ -258,23 +263,19 @@ app.get('*', (req: Request, res: Response) => {
   });
 });
 
+// Express 4 forwards synchronous validation errors here, including update/delete routes.
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  res.status(400).json({ error: err.message || 'Request could not be completed' });
+});
+
 // Export app for test runner
 export default app;
 
+// Start on the configured port; silently switching breaks the frontend proxy.
 if (process.env.NODE_ENV !== 'test') {
-  const host = '127.0.0.1';
-  const startServer = (port: number) => {
-    const serverInstance = app.listen(port, host, () => {
-      console.log(`Vyapar Application server running at http://${host}:${port}`);
-    });
-    serverInstance.on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
-        console.warn(`Port ${port} in use, attempting port ${port + 1}...`);
-        startServer(port + 1);
-      } else {
-        console.error('Server error:', err);
-      }
-    });
-  };
-  startServer(Number(PORT));
+  const host = process.env.HOST || '127.0.0.1';
+  if (!['127.0.0.1', 'localhost', '::1'].includes(host) && !process.env.API_TOKEN) throw new Error('Set API_TOKEN before exposing the business server on the network');
+  app.listen(Number(PORT), host, () => {
+    console.log(`Vyapar server running on port ${PORT}`);
+  }).on('error', (err) => { console.error(err); process.exitCode = 1; });
 }

@@ -179,7 +179,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <div className="form-group">
-                <label className="form-label">Purchase Price (₹)</label>
+                <label className="form-label">Purchase Price (PKR)</label>
                 <input
                   type="number"
                   min="0"
@@ -191,7 +191,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Selling Price (₹)</label>
+                <label className="form-label">Selling Price (PKR)</label>
                 <input
                   type="number"
                   min="0"
@@ -203,7 +203,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">MRP (₹)</label>
+                <label className="form-label">MRP (PKR)</label>
                 <input
                   type="number"
                   min="0"

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Viper</string>
+    <string name="title_activity_main">Viper</string>
+    <string name="package_name">com.viper.business</string>
+    <string name="custom_url_scheme">com.viper.business</string>
+</resources>

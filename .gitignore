@@ -10,3 +10,25 @@ yarn-debug.log*
 yarn-error.log*
 .env
 .env.local
+
+# Android generated output and local SDK paths
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor-cordova-android-plugins/
+*.keystore
+*.jks
+data/*.tmp
+data/*.bak
+
+data/*.lock
+qa/.ui-runtime/
+
+# Intermediate emulator screenshots; final evidence is in qa/android-final
+qa/android-device/
+qa/android-theme-final/
+qa/android-final/android-print-dialog.png

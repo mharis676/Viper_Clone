@@ -22,8 +22,8 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
       const balance = Math.abs(party.currentBalance);
       const isReceivable = party.currentBalance > 0;
       const text = isReceivable
-        ? `Dear ${party.name},\n\nThis is a gentle reminder from *${profile.tradeName || profile.name}* regarding your outstanding balance of *₹${balance.toLocaleString()}*.\n\nYou can pay directly via UPI: *${profile.upiId}* or transfer to:\nBank: ${profile.bankName}\nA/C: ${profile.accountNumber}\nIFSC: ${profile.ifsc}\n\nThank you for your prompt payment!\nBest Regards,\n${profile.tradeName || profile.name}`
-        : `Dear ${party.name},\n\nGreetings from *${profile.tradeName || profile.name}*. Your current account balance is *₹${balance.toLocaleString()}*.\n\nThank you for being our valued partner!`;
+        ? `Dear ${party.name},\n\nThis is a gentle reminder from *${profile.tradeName || profile.name}* regarding your outstanding balance of *PKR ${balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })}*.\n\nYou can pay by bank transfer:\nBank: ${profile.bankName}\nA/C: ${profile.accountNumber}\nBank / branch code: ${profile.ifsc}\n\nThank you for your prompt payment!\nBest Regards,\n${profile.tradeName || profile.name}`
+        : `Dear ${party.name},\n\nGreetings from *${profile.tradeName || profile.name}*. Your current account balance is *PKR ${balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })}*.\n\nThank you for being our valued partner!`;
 
       setMessage(text);
     }
@@ -33,7 +33,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
 
   const handleSend = () => {
     const cleanPhone = party.phone.replace(/[^0-9]/g, '');
-    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const phoneWithCountry = cleanPhone.startsWith('0092') ? cleanPhone.slice(2) : /^03\d{9}$/.test(cleanPhone) ? `92${cleanPhone.slice(1)}` : /^3\d{9}$/.test(cleanPhone) ? `92${cleanPhone}` : cleanPhone;
     const url = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
     onClose();
@@ -61,7 +61,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pending Balance</div>
               <div style={{ fontWeight: 800, color: party.currentBalance > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                ₹{Math.abs(party.currentBalance).toLocaleString()}
+                PKR {Math.abs(party.currentBalance).toLocaleString('en-PK', { maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>

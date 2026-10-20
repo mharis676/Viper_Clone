@@ -69,13 +69,13 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       <div className="header-left">
         <div className="company-pill">
           <Building2 size={16} color="var(--primary)" />
-          <span>{profile?.tradeName || profile?.name || 'Vyapar Enterprises'}</span>
+          <span>{profile?.tradeName || profile?.name || 'My Business'}</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            GSTIN: {profile?.gstin || '29ABCDE1234F1Z5'}
+            {profile?.gstin ? `Tax ID: ${profile.gstin}` : 'Currency: PKR'}
           </span>
         </div>
 
-        <button className="quick-search-btn" onClick={onOpenSearch}>
+        <button aria-label="Search parties, items and invoices" className="quick-search-btn" onClick={onOpenSearch}>
           <Search size={16} />
           <span>Search parties, items, invoices...</span>
           <span className="search-shortcut-badge">Ctrl + K</span>

@@ -1,4 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import {
+  localDate,
+  money,
+  calculateTotals,
+} from "../../server/calculations.js";
+import React, { useState, useRef, useEffect } from "react";
 import {
   CreditCard,
   Barcode,
@@ -10,8 +15,14 @@ import {
   Check,
   User,
   X,
-} from 'lucide-react';
-import { Item, Party, Transaction, TransactionItem, PaymentMode } from '../types.js';
+} from "lucide-react";
+import {
+  Item,
+  Party,
+  Transaction,
+  TransactionItem,
+  PaymentMode,
+} from "../types.js";
 
 interface CartItem extends TransactionItem {}
 
@@ -22,13 +33,18 @@ interface CartTab {
   partyName: string;
   items: CartItem[];
   paymentMode: PaymentMode;
-  paidAmount: number;
+  paidAmount: number | null;
+  splitAmount?: number;
+  splitMode?: PaymentMode;
 }
 
 interface PosViewProps {
   items: Item[];
   parties: Party[];
-  onCompleteCheckout: (txnData: Omit<Transaction, 'id' | 'createdAt'>, thenPrint?: boolean) => Promise<void>;
+  onCompleteCheckout: (
+    txnData: Omit<Transaction, "id" | "createdAt">,
+    thenPrint?: boolean,
+  ) => Promise<void>;
 }
 
 export const PosView: React.FC<PosViewProps> = ({
@@ -36,21 +52,54 @@ export const PosView: React.FC<PosViewProps> = ({
   parties,
   onCompleteCheckout,
 }) => {
-  const [tabs, setTabs] = useState<CartTab[]>([
-    {
-      id: 'tab-1',
-      tabName: 'Bill 1',
-      partyId: parties[0]?.id || '',
-      partyName: parties[0]?.name || 'Walk-in Retail Customer',
-      items: [],
-      paymentMode: 'cash',
-      paidAmount: 0,
-    },
-  ]);
-  const [activeTabId, setActiveTabId] = useState<string>('tab-1');
-  const [barcodeInput, setBarcodeInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [tabs, setTabs] = useState<CartTab[]>(() => {
+    try {
+      const stored = JSON.parse(
+        sessionStorage.getItem("viper.posDrafts") || "null",
+      );
+      if (
+        Array.isArray(stored) &&
+        stored.length &&
+        stored.every(
+          (t) =>
+            typeof t.id === "string" &&
+            Array.isArray(t.items) &&
+            t.items.every(
+              (i: any) =>
+                typeof i.itemId === "string" &&
+                Number.isFinite(i.quantity) &&
+                Number.isFinite(i.price) &&
+                Number.isFinite(i.total),
+            ),
+        )
+      )
+        return stored;
+    } catch {
+      /* Start a clean draft if the session copy is invalid. */
+    }
+    return [
+      {
+        id: "tab-1",
+        tabName: "Bill 1",
+        partyId: "walk-in",
+        partyName: "Walk-in Cash Customer",
+        items: [],
+        paymentMode: "cash",
+        paidAmount: null,
+      },
+    ];
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("viper.posDrafts", JSON.stringify(tabs));
+    } catch (e) {
+      console.error("Draft storage unavailable", e);
+    }
+  }, [tabs]);
+  const [activeTabId, setActiveTabId] = useState<string>(() => tabs[0].id);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isProcessing, setIsProcessing] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,15 +112,16 @@ export const PosView: React.FC<PosViewProps> = ({
   }, [activeTabId]);
 
   const addNewTab = () => {
-    const newId = `tab-${Date.now()}`;
+    if (isProcessing) return;
+    const newId = `tab-${crypto.randomUUID()}`;
     const newTab: CartTab = {
       id: newId,
       tabName: `Bill ${tabs.length + 1}`,
-      partyId: parties[0]?.id || '',
-      partyName: parties[0]?.name || 'Walk-in Customer',
+      partyId: "walk-in",
+      partyName: "Walk-in Cash Customer",
       items: [],
-      paymentMode: 'cash',
-      paidAmount: 0,
+      paymentMode: "cash",
+      paidAmount: null,
     };
     setTabs((prev) => [...prev, newTab]);
     setActiveTabId(newId);
@@ -79,7 +129,13 @@ export const PosView: React.FC<PosViewProps> = ({
 
   const closeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isProcessing) return;
     if (tabs.length === 1) return;
+    if (
+      tabs.find((t) => t.id === id)?.items.length &&
+      !confirm("Discard this unfinished bill?")
+    )
+      return;
     const remaining = tabs.filter((t) => t.id !== id);
     setTabs(remaining);
     if (activeTabId === id) {
@@ -88,6 +144,7 @@ export const PosView: React.FC<PosViewProps> = ({
   };
 
   const addItemToActiveCart = (item: Item) => {
+    if (isProcessing) return;
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.id !== activeTabId) return tab;
@@ -97,7 +154,8 @@ export const PosView: React.FC<PosViewProps> = ({
           const updatedItems = [...tab.items];
           const curr = updatedItems[existingIdx];
           const newQty = curr.quantity + 1;
-          const discountAmt = (curr.price * newQty * curr.discountPercent) / 100;
+          const discountAmt =
+            (curr.price * newQty * curr.discountPercent) / 100;
           const taxable = curr.price * newQty - discountAmt;
           const taxAmt = (taxable * curr.taxRate) / 100;
 
@@ -116,7 +174,7 @@ export const PosView: React.FC<PosViewProps> = ({
             itemId: item.id,
             itemName: item.name,
             itemCode: item.code,
-            hsnCode: item.hsnCode || '',
+            hsnCode: item.hsnCode || "",
             quantity: 1,
             unit: item.unit,
             price,
@@ -128,7 +186,7 @@ export const PosView: React.FC<PosViewProps> = ({
           };
           return { ...tab, items: [...tab.items, newItem] };
         }
-      })
+      }),
     );
   };
 
@@ -137,17 +195,23 @@ export const PosView: React.FC<PosViewProps> = ({
     if (!barcodeInput.trim()) return;
 
     const query = barcodeInput.trim();
-    const found = items.find((i) => i.barcode === query || i.code === query || i.name.toLowerCase() === query.toLowerCase());
+    const found = items.find(
+      (i) =>
+        i.barcode === query ||
+        i.code === query ||
+        i.name.toLowerCase() === query.toLowerCase(),
+    );
 
     if (found) {
       addItemToActiveCart(found);
-      setBarcodeInput('');
+      setBarcodeInput("");
     } else {
       alert(`No product found matching barcode or code: "${query}"`);
     }
   };
 
   const updateItemQty = (index: number, delta: number) => {
+    if (isProcessing) return;
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.id !== activeTabId) return tab;
@@ -159,7 +223,8 @@ export const PosView: React.FC<PosViewProps> = ({
         if (newQty <= 0) {
           updated.splice(index, 1);
         } else {
-          const discountAmt = (curr.price * newQty * curr.discountPercent) / 100;
+          const discountAmt =
+            (curr.price * newQty * curr.discountPercent) / 100;
           const taxable = curr.price * newQty - discountAmt;
           const taxAmt = (taxable * curr.taxRate) / 100;
           updated[index] = {
@@ -171,65 +236,116 @@ export const PosView: React.FC<PosViewProps> = ({
           };
         }
         return { ...tab, items: updated };
-      })
+      }),
     );
   };
 
   const removeItem = (index: number) => {
+    if (isProcessing) return;
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.id !== activeTabId) return tab;
         const updated = tab.items.filter((_, i) => i !== index);
         return { ...tab, items: updated };
-      })
+      }),
     );
   };
 
   const updateActiveTabField = (field: keyof CartTab, val: any) => {
+    if (isProcessing) return;
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.id !== activeTabId) return tab;
         return { ...tab, [field]: val };
-      })
+      }),
     );
   };
 
   // Calculations for active tab
-  const subtotal = activeTab.items.reduce((acc, curr) => acc + curr.quantity * curr.price, 0);
-  const discountTotal = activeTab.items.reduce((acc, curr) => acc + curr.discountAmount, 0);
-  const taxTotal = activeTab.items.reduce((acc, curr) => acc + curr.taxAmount, 0);
-  const grandTotal = Math.round(subtotal - discountTotal + taxTotal);
-  const paidAmount = activeTab.paidAmount || grandTotal; // defaults to exact cash/tender
-  const changeDue = Math.max(0, paidAmount - grandTotal);
-  const balanceDue = Math.max(0, grandTotal - paidAmount);
+  const {
+    subtotal,
+    discountTotal,
+    taxTotal,
+    total: grandTotal,
+    cgst,
+    sgst,
+    igst,
+  } = calculateTotals(activeTab.items);
+  const paidAmount = activeTab.paidAmount ?? grandTotal; // defaults to exact cash/tender
+  const changeDue = money(Math.max(0, paidAmount - grandTotal));
+  const balanceDue = money(Math.max(0, grandTotal - paidAmount));
 
   const handleCheckout = async (thenPrint = true) => {
     if (activeTab.items.length === 0) {
-      alert('Cart is empty! Add products using barcode scanner or product grid.');
+      alert(
+        "Cart is empty! Add products using barcode scanner or product grid.",
+      );
       return;
     }
 
+    if (isProcessing) return;
+    if (!Number.isFinite(paidAmount) || paidAmount < 0) {
+      alert("Enter a valid tender amount");
+      return;
+    }
+    if (
+      (activeTab.partyId === "walk-in" || !activeTab.partyId) &&
+      balanceDue > 0
+    ) {
+      alert("Select a customer for a credit sale");
+      return;
+    }
+    if (
+      (activeTab.splitAmount || 0) < 0 ||
+      (activeTab.splitAmount || 0) > Math.min(paidAmount, grandTotal)
+    ) {
+      alert("Split amount must be between zero and the amount paid");
+      return;
+    }
     setIsProcessing(true);
     try {
-      const invNumber = `POS-${Date.now().toString().slice(-6)}`;
-      const txnPayload: Omit<Transaction, 'id' | 'createdAt'> = {
+      const invNumber = `POS-${crypto.randomUUID().slice(0, 12)}`;
+      const txnPayload: Omit<Transaction, "id" | "createdAt"> = {
         invoiceNumber: invNumber,
-        type: 'sale',
-        partyId: activeTab.partyId || parties[0]?.id || 'walk-in',
-        partyName: activeTab.partyName || 'Walk-in Retail Customer',
-        date: new Date().toISOString().split('T')[0],
+        type: "sale",
+        payments:
+          (activeTab.splitAmount || 0) > 0
+            ? [
+                {
+                  mode: activeTab.paymentMode,
+                  amount: money(
+                    Math.min(paidAmount, grandTotal) - activeTab.splitAmount!,
+                  ),
+                },
+                {
+                  mode: activeTab.splitMode || "bank",
+                  amount: activeTab.splitAmount!,
+                },
+              ]
+            : undefined,
+        partyId: activeTab.partyId || "walk-in",
+        partyName:
+          activeTab.partyId === "walk-in"
+            ? "Walk-in Cash Customer"
+            : activeTab.partyName,
+        date: localDate(),
         items: activeTab.items,
         subtotal,
         discountTotal,
         taxTotal,
-        cgst: taxTotal / 2,
-        sgst: taxTotal / 2,
-        igst: 0,
+        cgst,
+        sgst,
+        igst,
         total: grandTotal,
         paidAmount: Math.min(paidAmount, grandTotal),
         balanceDue,
         paymentMode: activeTab.paymentMode,
-        status: balanceDue === 0 ? 'paid' : balanceDue === grandTotal ? 'unpaid' : 'partial',
+        status:
+          balanceDue === 0
+            ? "paid"
+            : balanceDue === grandTotal
+              ? "unpaid"
+              : "partial",
         notes: `POS Quick Sale Checkout (${activeTab.paymentMode.toUpperCase()})`,
       };
 
@@ -239,9 +355,9 @@ export const PosView: React.FC<PosViewProps> = ({
       setTabs((prev) =>
         prev.map((t) =>
           t.id === activeTabId
-            ? { ...t, items: [], paidAmount: 0 }
-            : t
-        )
+            ? { ...t, items: [], paidAmount: null, splitAmount: 0 }
+            : t,
+        ),
       );
     } catch (err: any) {
       alert(`Checkout failed: ${err.message}`);
@@ -251,7 +367,8 @@ export const PosView: React.FC<PosViewProps> = ({
   };
 
   const filteredCatalog = items.filter((item) => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || item.category === selectedCategory;
     const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.barcode.includes(searchTerm) ||
@@ -268,11 +385,11 @@ export const PosView: React.FC<PosViewProps> = ({
           {tabs.map((tab) => (
             <div
               key={tab.id}
-              className={`pos-tab ${activeTabId === tab.id ? 'active' : ''}`}
+              className={`pos-tab ${activeTabId === tab.id ? "active" : ""}`}
               onClick={() => setActiveTabId(tab.id)}
             >
               <span>{tab.tabName}</span>
-              <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+              <span style={{ fontSize: "0.75rem", opacity: 0.8 }}>
                 ({tab.items.length})
               </span>
               {tabs.length > 1 && (
@@ -281,7 +398,11 @@ export const PosView: React.FC<PosViewProps> = ({
             </div>
           ))}
 
-          <button className="btn btn-secondary btn-sm" onClick={addNewTab} title="Hold & Open New Bill">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={addNewTab}
+            title="Hold & Open New Bill"
+          >
             <Plus size={14} />
             <span>Hold / New Bill</span>
           </button>
@@ -289,8 +410,16 @@ export const PosView: React.FC<PosViewProps> = ({
 
         {/* Barcode Scanner Input */}
         <form onSubmit={handleBarcodeSubmit} className="pos-search-bar">
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Barcode size={18} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--primary)' }} />
+          <div style={{ position: "relative", flex: 1 }}>
+            <Barcode
+              size={18}
+              style={{
+                position: "absolute",
+                left: 12,
+                top: 12,
+                color: "var(--primary)",
+              }}
+            />
             <input
               ref={barcodeInputRef}
               type="text"
@@ -307,17 +436,24 @@ export const PosView: React.FC<PosViewProps> = ({
         </form>
 
         {/* Category Filters */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            overflowX: "auto",
+            paddingBottom: 4,
+          }}
+        >
           <button
-            className={`btn btn-sm ${selectedCategory === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setSelectedCategory('all')}
+            className={`btn btn-sm ${selectedCategory === "all" ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setSelectedCategory("all")}
           >
             All Products
           </button>
           {categories.map((c) => (
             <button
               key={c}
-              className={`btn btn-sm ${selectedCategory === c ? 'btn-primary' : 'btn-secondary'}`}
+              className={`btn btn-sm ${selectedCategory === c ? "btn-primary" : "btn-secondary"}`}
               onClick={() => setSelectedCategory(c)}
             >
               {c}
@@ -328,17 +464,20 @@ export const PosView: React.FC<PosViewProps> = ({
         {/* Product Cards Grid */}
         <div className="pos-product-grid">
           {filteredCatalog.map((item) => (
-            <div
+            <button
+              type="button"
               key={item.id}
               className="pos-product-card"
               onClick={() => addItemToActiveCart(item)}
             >
               <div className="pos-product-title">{item.name}</div>
-              <div className="pos-product-price">₹{item.salesPrice.toLocaleString()}</div>
+              <div className="pos-product-price">
+                PKR {item.salesPrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+              </div>
               <div className="pos-product-stock">
                 Stock: {item.currentStock} {item.unit}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -346,7 +485,7 @@ export const PosView: React.FC<PosViewProps> = ({
       {/* Right Column: Active Cart, Party Selector, Split Payment, Grand Total, Checkout */}
       <div className="pos-right">
         <div className="pos-cart-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <User size={18} color="var(--primary)" />
             <select
               className="form-select"
@@ -354,16 +493,21 @@ export const PosView: React.FC<PosViewProps> = ({
               value={activeTab.partyId}
               onChange={(e) => {
                 const p = parties.find((party) => party.id === e.target.value);
-                updateActiveTabField('partyId', e.target.value);
-                if (p) updateActiveTabField('partyName', p.name);
+                updateActiveTabField("partyId", e.target.value);
+                updateActiveTabField(
+                  "partyName",
+                  p?.name || "Walk-in Cash Customer",
+                );
               }}
             >
-              <option value="">Walk-in Cash Customer</option>
-              {parties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+              <option value="walk-in">Walk-in Cash Customer</option>
+              {parties
+                .filter((p) => p.type === "customer")
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
             </select>
           </div>
           <span className="sidebar-badge">{activeTab.tabName}</span>
@@ -372,10 +516,19 @@ export const PosView: React.FC<PosViewProps> = ({
         {/* Cart Line Items */}
         <div className="pos-cart-items">
           {activeTab.items.length === 0 ? (
-            <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Barcode size={36} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+            <div
+              style={{
+                padding: "60px 20px",
+                textAlign: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <Barcode
+                size={36}
+                style={{ margin: "0 auto 12px", opacity: 0.5 }}
+              />
               <div>Cart is currently empty.</div>
-              <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+              <div style={{ fontSize: "0.8rem", marginTop: 4 }}>
                 Scan product barcode or click items on the left to add.
               </div>
             </div>
@@ -383,25 +536,38 @@ export const PosView: React.FC<PosViewProps> = ({
             activeTab.items.map((item, idx) => (
               <div key={idx} className="pos-cart-item">
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{item.itemName}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    ₹{item.price} x {item.quantity} {item.unit} (+{item.taxRate}% GST)
+                  <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>
+                    {item.itemName}
+                  </div>
+                  <div
+                    style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}
+                  >
+                    PKR {item.price} x {item.quantity} {item.unit} (+{item.taxRate}
+                    % GST)
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <button
                     className="btn-icon"
+                    aria-label="Change quantity"
                     style={{ padding: 4 }}
                     onClick={() => updateItemQty(idx, -1)}
                   >
                     <Minus size={14} />
                   </button>
-                  <span style={{ fontWeight: 700, minWidth: 20, textAlign: 'center' }}>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      minWidth: 20,
+                      textAlign: "center",
+                    }}
+                  >
                     {item.quantity}
                   </span>
                   <button
                     className="btn-icon"
+                    aria-label="Change quantity"
                     style={{ padding: 4 }}
                     onClick={() => updateItemQty(idx, 1)}
                   >
@@ -409,13 +575,16 @@ export const PosView: React.FC<PosViewProps> = ({
                   </button>
                 </div>
 
-                <div style={{ fontWeight: 700, minWidth: 70, textAlign: 'right' }}>
-                  ₹{Math.round(item.total).toLocaleString()}
+                <div
+                  style={{ fontWeight: 700, minWidth: 70, textAlign: "right" }}
+                >
+                  PKR {item.total.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                 </div>
 
                 <button
                   className="btn-icon"
-                  style={{ color: 'var(--danger)', padding: 4 }}
+                  aria-label="Remove item"
+                  style={{ color: "var(--danger)", padding: 4 }}
                   onClick={() => removeItem(idx)}
                 >
                   <Trash2 size={14} />
@@ -427,56 +596,145 @@ export const PosView: React.FC<PosViewProps> = ({
 
         {/* Cart Summary & Checkout */}
         <div className="pos-cart-summary">
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
-            <span>₹{subtotal.toLocaleString()}</span>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "0.85rem",
+            }}
+          >
+            <span style={{ color: "var(--text-secondary)" }}>Subtotal:</span>
+            <span>PKR {subtotal.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>GST Tax:</span>
-            <span>₹{taxTotal.toLocaleString()}</span>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "0.85rem",
+            }}
+          >
+            <span style={{ color: "var(--text-secondary)" }}>GST Tax:</span>
+            <span>PKR {taxTotal.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</span>
           </div>
 
           <div className="pos-total-row">
             <span>Payable:</span>
-            <span style={{ color: 'var(--primary)' }}>₹{grandTotal.toLocaleString()}</span>
+            <span style={{ color: "var(--primary)" }}>
+              PKR {grandTotal.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+            </span>
           </div>
 
           {/* Payment Mode Selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-            {(['cash', 'upi', 'bank', 'cheque'] as PaymentMode[]).map((mode) => (
-              <button
-                key={mode}
-                className={`btn btn-sm ${activeTab.paymentMode === mode ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => updateActiveTabField('paymentMode', mode)}
-                style={{ textTransform: 'uppercase' }}
-              >
-                {mode}
-              </button>
-            ))}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 6,
+            }}
+          >
+            {(["cash", "upi", "bank", "cheque"] as PaymentMode[]).map(
+              (mode) => (
+                <button
+                  key={mode === "upi" ? "Mobile wallet" : mode}
+                  className={`btn btn-sm ${activeTab.paymentMode === mode ? "btn-primary" : "btn-secondary"}`}
+                  onClick={() => updateActiveTabField("paymentMode", mode)}
+                  style={{ textTransform: "uppercase" }}
+                >
+                  {mode === "upi" ? "Mobile wallet" : mode}
+                </button>
+              ),
+            )}
           </div>
 
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              updateActiveTabField("paidAmount", 0);
+              updateActiveTabField("splitAmount", 0);
+            }}
+          >
+            Credit sale (pay later)
+          </button>
           {/* Tender Amount / Change Calculation */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Tender Cash (₹):</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+              Tender Cash (PKR):
+            </span>
             <input
               type="number"
               min="0"
               className="form-input"
-              style={{ width: 120, textAlign: 'right', fontWeight: 700 }}
+              style={{ width: 120, textAlign: "right", fontWeight: 700 }}
               value={paidAmount}
-              onChange={(e) => updateActiveTabField('paidAmount', parseFloat(e.target.value) || 0)}
+              onChange={(e) =>
+                updateActiveTabField("paidAmount", Number(e.target.value))
+              }
             />
           </div>
 
+          <div className="split-payment form-grid">
+            <label className="form-group">
+              Second tender amount (optional)
+              <input
+                className="form-input"
+                aria-label="Second tender amount"
+                type="number"
+                min="0"
+                max={Math.min(paidAmount, grandTotal)}
+                step="0.01"
+                value={activeTab.splitAmount || 0}
+                onChange={(e) =>
+                  updateActiveTabField("splitAmount", Number(e.target.value))
+                }
+              />
+            </label>
+            <label className="form-group">
+              Second tender mode
+              <select
+                className="form-select"
+                value={activeTab.splitMode || "bank"}
+                onChange={(e) =>
+                  updateActiveTabField("splitMode", e.target.value)
+                }
+              >
+                {["bank", "upi", "cash", "cheque"].map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode === "upi" ? "MOBILE WALLET" : mode.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           {changeDue > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--success)', fontWeight: 700 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "0.9rem",
+                color: "var(--success)",
+                fontWeight: 700,
+              }}
+            >
               <span>Return Change:</span>
-              <span>₹{changeDue.toLocaleString()}</span>
+              <span>PKR {changeDue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</span>
             </div>
           )}
 
           {/* Checkout Buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1.5fr",
+              gap: 10,
+            }}
+          >
             <button
               className="btn btn-secondary"
               disabled={isProcessing || activeTab.items.length === 0}

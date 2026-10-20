@@ -1,3 +1,4 @@
+import { printDocument } from '../export.js';
 import React, { useState } from 'react';
 import {
   Users,
@@ -103,7 +104,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
             type="text"
             className="form-input"
             style={{ paddingLeft: 36 }}
-            placeholder="Search party by name, phone, GSTIN..."
+            placeholder="Search party by name, phone, tax ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -119,9 +120,9 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                 <th>Party Name</th>
                 <th>Type</th>
                 <th>Contact</th>
-                <th>GSTIN</th>
+                <th>Tax ID</th>
                 <th>Credit Limit</th>
-                <th>Balance (₹)</th>
+                <th>Balance (PKR)</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
@@ -152,7 +153,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                     <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
                       {party.gstin || '-'}
                     </td>
-                    <td>₹{(party.creditLimit || 0).toLocaleString()}</td>
+                    <td>PKR {(party.creditLimit || 0).toLocaleString('en-PK', { maximumFractionDigits: 2 })}</td>
                     <td>
                       <div
                         style={{
@@ -160,7 +161,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                           color: isReceivable ? 'var(--success)' : isPayable ? 'var(--danger)' : 'var(--text-primary)',
                         }}
                       >
-                        ₹{Math.abs(party.currentBalance).toLocaleString()}
+                        PKR {Math.abs(party.currentBalance).toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                         <span style={{ fontSize: '0.75rem', marginLeft: 4, fontWeight: 500 }}>
                           {isReceivable ? '(To Receive)' : isPayable ? '(To Pay)' : '(Settled)'}
                         </span>
@@ -220,7 +221,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
               <div>
                 <h3>{selectedParty.name} — Statement of Accounts</h3>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  Phone: {selectedParty.phone} | GSTIN: {selectedParty.gstin || 'Unregistered'}
+                  Phone: {selectedParty.phone} | Tax ID: {selectedParty.gstin || 'Unregistered'}
                 </div>
               </div>
               <button className="btn-icon" onClick={() => setSelectedParty(null)}>
@@ -243,9 +244,9 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                         <th>Date</th>
                         <th>Voucher / Ref #</th>
                         <th>Description</th>
-                        <th style={{ textAlign: 'right' }}>Debit (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Credit (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Running Balance (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Debit (PKR)</th>
+                        <th style={{ textAlign: 'right' }}>Credit (PKR)</th>
+                        <th style={{ textAlign: 'right' }}>Running Balance (PKR)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -257,13 +258,13 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                           </td>
                           <td>{entry.description}</td>
                           <td style={{ textAlign: 'right', fontWeight: 600, color: entry.type === 'debit' ? 'var(--danger)' : 'inherit' }}>
-                            {entry.type === 'debit' ? `₹${entry.amount.toLocaleString()}` : '-'}
+                            {entry.type === 'debit' ? `PKR ${entry.amount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}` : '-'}
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 600, color: entry.type === 'credit' ? 'var(--success)' : 'inherit' }}>
-                            {entry.type === 'credit' ? `₹${entry.amount.toLocaleString()}` : '-'}
+                            {entry.type === 'credit' ? `PKR ${entry.amount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}` : '-'}
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                            ₹{entry.runningBalance.toLocaleString()}
+                            PKR {entry.runningBalance.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                           </td>
                         </tr>
                       ))}
@@ -280,7 +281,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
               <button
                 className="btn btn-primary"
                 onClick={() => {
-                  window.print();
+                  printDocument().catch(e => alert(e.message));
                 }}
               >
                 Print Statement

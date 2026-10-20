@@ -1,0 +1,377 @@
+[
+  {
+    "case": "Delete sale rollback",
+    "before": {
+      "stock": 5,
+      "partyBalance": 0,
+      "cash": 1000,
+      "ledgers": []
+    },
+    "afterSale": {
+      "stock": 4,
+      "partyBalance": 68,
+      "cash": 1050,
+      "ledgers": [
+        {
+          "id": "led-1792512144333-18",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144332-342",
+          "invoiceNumber": "QA-001",
+          "type": "debit",
+          "amount": 118,
+          "runningBalance": 68,
+          "description": "Sale Invoice #QA-001"
+        },
+        {
+          "id": "led-1792512144333-529",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144332-342",
+          "invoiceNumber": "QA-001",
+          "type": "credit",
+          "amount": 50,
+          "runningBalance": 68,
+          "description": "Payment received for #QA-001"
+        }
+      ]
+    },
+    "afterDelete": {
+      "stock": 5,
+      "partyBalance": 68,
+      "cash": 1050,
+      "ledgers": [
+        {
+          "id": "led-1792512144333-18",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144332-342",
+          "invoiceNumber": "QA-001",
+          "type": "debit",
+          "amount": 118,
+          "runningBalance": 68,
+          "description": "Sale Invoice #QA-001"
+        },
+        {
+          "id": "led-1792512144333-529",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144332-342",
+          "invoiceNumber": "QA-001",
+          "type": "credit",
+          "amount": 50,
+          "runningBalance": 68,
+          "description": "Payment received for #QA-001"
+        }
+      ]
+    }
+  },
+  {
+    "case": "Return accounting and deletion",
+    "status": 201,
+    "afterReturn": {
+      "stock": 6,
+      "partyBalance": 0,
+      "cash": 1000,
+      "ledgers": []
+    },
+    "afterDelete": {
+      "stock": 6,
+      "partyBalance": 0,
+      "cash": 1000,
+      "ledgers": []
+    },
+    "gstBefore": {
+      "totalTaxableSale": 0,
+      "totalOutputGst": 0,
+      "totalTaxablePurchase": 0,
+      "totalInputGst": 0,
+      "netGstPayable": 0
+    },
+    "gstAfter": {
+      "totalTaxableSale": 0,
+      "totalOutputGst": 0,
+      "totalTaxablePurchase": 0,
+      "totalInputGst": 0,
+      "netGstPayable": 0
+    }
+  },
+  {
+    "case": "Oversell then delete",
+    "status": 201,
+    "afterOversell": {
+      "stock": 0,
+      "partyBalance": 68,
+      "cash": 1050,
+      "ledgers": [
+        {
+          "id": "led-1792512144492-854",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144471-764",
+          "invoiceNumber": "QA-001",
+          "type": "debit",
+          "amount": 118,
+          "runningBalance": 68,
+          "description": "Sale Invoice #QA-001"
+        },
+        {
+          "id": "led-1792512144492-61",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144471-764",
+          "invoiceNumber": "QA-001",
+          "type": "credit",
+          "amount": 50,
+          "runningBalance": 68,
+          "description": "Payment received for #QA-001"
+        }
+      ]
+    },
+    "afterDelete": {
+      "stock": 10,
+      "partyBalance": 68,
+      "cash": 1050,
+      "ledgers": [
+        {
+          "id": "led-1792512144492-854",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144471-764",
+          "invoiceNumber": "QA-001",
+          "type": "debit",
+          "amount": 118,
+          "runningBalance": 68,
+          "description": "Sale Invoice #QA-001"
+        },
+        {
+          "id": "led-1792512144492-61",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144471-764",
+          "invoiceNumber": "QA-001",
+          "type": "credit",
+          "amount": 50,
+          "runningBalance": 68,
+          "description": "Payment received for #QA-001"
+        }
+      ]
+    }
+  },
+  {
+    "case": "Client totals trusted",
+    "status": 201,
+    "saved": {
+      "invoiceNumber": "QA-001",
+      "type": "sale",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "date": "2026-01-01",
+      "items": [
+        {
+          "itemId": "item-1",
+          "itemName": "QA item",
+          "itemCode": "QA",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 100,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 18,
+          "total": 118
+        }
+      ],
+      "subtotal": 100,
+      "discountTotal": 0,
+      "taxTotal": 18,
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 0,
+      "total": 1,
+      "paidAmount": 50,
+      "balanceDue": -999,
+      "paymentMode": "cash",
+      "status": "partial",
+      "id": "txn-1792512144605-180",
+      "createdAt": "2026-10-20T16:02:24.605Z"
+    },
+    "state": {
+      "stock": 4,
+      "partyBalance": -999,
+      "cash": 1050,
+      "ledgers": [
+        {
+          "id": "led-1792512144624-199",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144605-180",
+          "invoiceNumber": "QA-001",
+          "type": "debit",
+          "amount": 1,
+          "runningBalance": -999,
+          "description": "Sale Invoice #QA-001"
+        },
+        {
+          "id": "led-1792512144624-600",
+          "date": "2026-10-20",
+          "partyId": "party-1",
+          "partyName": "Sharma General Stores",
+          "transactionId": "txn-1792512144605-180",
+          "invoiceNumber": "QA-001",
+          "type": "credit",
+          "amount": 50,
+          "runningBalance": -999,
+          "description": "Payment received for #QA-001"
+        }
+      ]
+    }
+  },
+  {
+    "case": "Failed create atomicity",
+    "status": 400,
+    "transactionCount": 1
+  },
+  {
+    "case": "Ledger dates and balances",
+    "entries": [
+      {
+        "id": "led-1792512144727-370",
+        "date": "2026-10-20",
+        "partyId": "party-1",
+        "partyName": "Sharma General Stores",
+        "transactionId": "txn-1792512144713-487",
+        "invoiceNumber": "QA-001",
+        "type": "debit",
+        "amount": 118,
+        "runningBalance": 68,
+        "description": "Sale Invoice #QA-001"
+      },
+      {
+        "id": "led-1792512144727-191",
+        "date": "2026-10-20",
+        "partyId": "party-1",
+        "partyName": "Sharma General Stores",
+        "transactionId": "txn-1792512144713-487",
+        "invoiceNumber": "QA-001",
+        "type": "credit",
+        "amount": 50,
+        "runningBalance": 68,
+        "description": "Payment received for #QA-001"
+      }
+    ],
+    "invoiceDate": "2026-01-01"
+  },
+  {
+    "case": "Profit calculation",
+    "report": {
+      "salesRevenue": 100,
+      "purchasesCost": 0,
+      "grossProfit": 100,
+      "totalExpenses": 0,
+      "netProfit": 100,
+      "expenseBreakdown": []
+    },
+    "itemUnitCost": 420
+  },
+  {
+    "case": "Quotation correctly leaves balances unchanged",
+    "state": {
+      "stock": 5,
+      "partyBalance": 0,
+      "cash": 1000,
+      "ledgers": []
+    }
+  },
+  {
+    "case": "Payment does not settle invoice",
+    "partyBalance": 0,
+    "invoice": {
+      "invoiceNumber": "QA-001",
+      "type": "sale",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "date": "2026-01-01",
+      "items": [
+        {
+          "itemId": "item-1",
+          "itemName": "QA item",
+          "itemCode": "QA",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 100,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 18,
+          "total": 118
+        }
+      ],
+      "subtotal": 100,
+      "discountTotal": 0,
+      "taxTotal": 18,
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 0,
+      "total": 118,
+      "paidAmount": 0,
+      "balanceDue": 118,
+      "paymentMode": "cash",
+      "status": "unpaid",
+      "id": "txn-1792512144827-392",
+      "createdAt": "2026-10-20T16:02:24.827Z"
+    }
+  },
+  {
+    "case": "Opening balance edit",
+    "party": {
+      "id": "party-1",
+      "name": "Sharma General Stores",
+      "type": "customer",
+      "phone": "9845012345",
+      "email": "sharma.stores@gmail.com",
+      "gstin": "29AAACH7409R1ZX",
+      "billingAddress": "Shop 12, Market Road, Bengaluru",
+      "openingBalance": 500,
+      "currentBalance": 0,
+      "creditLimit": 50000,
+      "createdAt": "2026-10-20T14:41:10.074Z"
+    }
+  },
+  {
+    "case": "Insufficient funds transfer",
+    "status": 200,
+    "cash": -1000
+  },
+  {
+    "case": "String transfer amount",
+    "status": 200,
+    "accounts": [
+      {
+        "id": "acc-1",
+        "balance": 900
+      },
+      {
+        "id": "acc-2",
+        "balance": "148800100"
+      }
+    ]
+  },
+  {
+    "case": "Invalid backup accepted",
+    "restoreStatus": 200,
+    "dashboardStatus": 500,
+    "error": {
+      "error": "Cannot read properties of undefined (reading 'forEach')"
+    }
+  }
+]

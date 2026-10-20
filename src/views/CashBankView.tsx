@@ -124,7 +124,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
               <Wallet size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{totalCash.toLocaleString()}</div>
+          <div className="kpi-value">PKR {totalCash.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Physical cash register balance
           </div>
@@ -137,7 +137,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
               <Landmark size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{totalBank.toLocaleString()}</div>
+          <div className="kpi-value">PKR {totalBank.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Across {bankAccounts.length} verified bank accounts
           </div>
@@ -159,7 +159,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                 <th>Bank & A/C Number</th>
                 <th>IFSC Code</th>
                 <th>Default Status</th>
-                <th style={{ textAlign: 'right' }}>Current Balance (₹)</th>
+                <th style={{ textAlign: 'right' }}>Current Balance (PKR)</th>
               </tr>
             </thead>
             <tbody>
@@ -203,7 +203,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                     )}
                   </td>
                   <td style={{ textAlign: 'right', fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                    ₹{acc.balance.toLocaleString()}
+                    PKR {acc.balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                   </td>
                 </tr>
               ))}
@@ -234,7 +234,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                   >
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} (Balance: ₹{a.balance.toLocaleString()})
+                        {a.name} (Balance: PKR {a.balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })})
                       </option>
                     ))}
                   </select>
@@ -249,14 +249,14 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                   >
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.name} (Balance: ₹{a.balance.toLocaleString()})
+                        {a.name} (Balance: PKR {a.balance.toLocaleString('en-PK', { maximumFractionDigits: 2 })})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Transfer Amount (₹) *</label>
+                  <label className="form-label">Transfer Amount (PKR) *</label>
                   <input
                     type="number"
                     min="1"
@@ -355,7 +355,7 @@ export const CashBankView: React.FC<CashBankViewProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Opening Balance (₹)</label>
+                    <label className="form-label">Opening Balance (PKR)</label>
                     <input
                       type="number"
                       className="form-input"

@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { api } from './api.js';
+import { Capacitor, SystemBars, SystemBarsStyle } from "@capacitor/core";
+import { App as NativeApp } from "@capacitor/app";
+import { native } from "./connection.js";
+import { UIAccessibility } from "./components/UIAccessibility.js";
+import React, { useState, useEffect, useCallback } from "react";
+import { api } from "./api.js";
 import {
   BusinessProfile,
   Party,
@@ -14,31 +18,36 @@ import {
   PrintSettings,
   TransactionType,
   PartyType,
-} from './types.js';
+} from "./types.js";
 
-import { Sidebar, ActiveTab } from './components/Sidebar.js';
-import { TopHeader } from './components/TopHeader.js';
-import { GlobalSearchModal } from './components/GlobalSearchModal.js';
-import { InvoiceModal } from './components/InvoiceModal.js';
-import { PartyModal } from './components/PartyModal.js';
-import { ItemModal } from './components/ItemModal.js';
-import { PrintPreviewModal } from './components/PrintPreviewModal.js';
-import { WhatsAppModal } from './components/WhatsAppModal.js';
+import { Sidebar, ActiveTab } from "./components/Sidebar.js";
+import { TopHeader } from "./components/TopHeader.js";
+import { GlobalSearchModal } from "./components/GlobalSearchModal.js";
+import { PaymentModal } from "./components/PaymentModal.js";
+import { InvoiceModal } from "./components/InvoiceModal.js";
+import { PartyModal } from "./components/PartyModal.js";
+import { ItemModal } from "./components/ItemModal.js";
+import { PrintPreviewModal } from "./components/PrintPreviewModal.js";
+import { WhatsAppModal } from "./components/WhatsAppModal.js";
 
-import { DashboardView } from './views/DashboardView.js';
-import { PartiesView } from './views/PartiesView.js';
-import { ItemsView } from './views/ItemsView.js';
-import { SalesView } from './views/SalesView.js';
-import { PurchasesView } from './views/PurchasesView.js';
-import { PosView } from './views/PosView.js';
-import { ExpensesView } from './views/ExpensesView.js';
-import { CashBankView } from './views/CashBankView.js';
-import { ReportsView } from './views/ReportsView.js';
-import { SettingsView } from './views/SettingsView.js';
+import { DashboardView } from "./views/DashboardView.js";
+import { PartiesView } from "./views/PartiesView.js";
+import { ItemsView } from "./views/ItemsView.js";
+import { SalesView } from "./views/SalesView.js";
+import { PurchasesView } from "./views/PurchasesView.js";
+import { PosView } from "./views/PosView.js";
+import { ExpensesView } from "./views/ExpensesView.js";
+import { CashBankView } from "./views/CashBankView.js";
+import { ReportsView } from "./views/ReportsView.js";
+import { SettingsView } from "./views/SettingsView.js";
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [dataError, setDataError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   // Application Data States
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
@@ -46,14 +55,16 @@ export const App: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>(
+    [],
+  );
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [pnlReport, setPnlReport] = useState<ProfitAndLossReport | null>(null);
   const [gstReport, setGstReport] = useState<GstReport | null>(null);
   const [printSettings, setPrintSettings] = useState<PrintSettings>({
-    paperSize: 'laser_a4',
-    themeColor: '#C62828',
+    paperSize: "laser_a4",
+    themeColor: "#C62828",
     companyLogo: true,
     signature: true,
     upiQr: true,
@@ -63,18 +74,23 @@ export const App: React.FC = () => {
 
   // Modal Visibility States
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-  const [invoiceType, setInvoiceType] = useState<TransactionType>('sale');
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [invoiceType, setInvoiceType] = useState<TransactionType>("sale");
+  const [editingTransaction, setEditingTransaction] =
+    useState<Transaction | null>(null);
 
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<Party | null>(null);
-  const [defaultPartyType, setDefaultPartyType] = useState<PartyType>('customer');
+  const [defaultPartyType, setDefaultPartyType] =
+    useState<PartyType>("customer");
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [printTargetTxn, setPrintTargetTxn] = useState<Transaction | null>(null);
+  const [thermalPrint, setThermalPrint] = useState(false);
+  const [printTargetTxn, setPrintTargetTxn] = useState<Transaction | null>(
+    null,
+  );
 
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [whatsAppParty, setWhatsAppParty] = useState<Party | null>(null);
@@ -83,6 +99,8 @@ export const App: React.FC = () => {
 
   // Load All Application Data
   const loadData = useCallback(async () => {
+    setLoading(true);
+    setDataError("");
     try {
       const [
         prof,
@@ -111,6 +129,7 @@ export const App: React.FC = () => {
       ]);
 
       setProfile(prof);
+      if (native && !prof.phone) setActiveTab("settings");
       setParties(partiesData);
       setItems(itemsData);
       setTransactions(txnsData);
@@ -122,7 +141,11 @@ export const App: React.FC = () => {
       setGstReport(gstData);
       setPrintSettings(printData);
     } catch (err) {
-      console.error('Failed to load application data:', err);
+      setDataError(
+        err instanceof Error ? err.message : "Could not load business data",
+      );
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -130,49 +153,77 @@ export const App: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (Capacitor.isNativePlatform())
+      SystemBars.setStyle({
+        style: theme === "dark" ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
+      }).catch(console.error);
+  }, [theme]);
+  useEffect(() => {
+    if (!native) return;
+    const listener = NativeApp.addListener("backButton", () => {
+      const close = document.querySelector<HTMLButtonElement>(
+        ".modal-overlay:last-of-type .modal-header .btn-icon",
+      );
+      if (close) close.click();
+      else if (menuOpen) setMenuOpen(false);
+      else if (activeTab !== "dashboard") setActiveTab("dashboard");
+      else NativeApp.minimizeApp();
+    });
+    return () => {
+      listener.then((l) => l.remove());
+    };
+  }, [activeTab, menuOpen]);
   // Invoice Handlers
-  const openNewInvoiceModal = (type: TransactionType = 'sale') => {
+  const openNewInvoiceModal = (type: TransactionType = "sale") => {
     setInvoiceType(type);
     setEditingTransaction(null);
     setIsInvoiceModalOpen(true);
   };
 
   const handleSaveTransaction = async (
-    txnPayload: Omit<Transaction, 'id' | 'createdAt'>,
-    thenPrint = false
+    txnPayload: Omit<Transaction, "id" | "createdAt">,
+    thenPrint = false,
   ) => {
     const createdTxn = await api.createTransaction(txnPayload);
     await loadData();
     if (thenPrint) {
+      setThermalPrint(false);
       setPrintTargetTxn(createdTxn);
       setIsPrintModalOpen(true);
     }
   };
 
   const handleDeleteTransaction = async (id: string) => {
-    await api.deleteTransaction(id);
-    await loadData();
+    try {
+      await api.deleteTransaction(id);
+      await loadData();
+    } catch (e: any) {
+      alert(e.message);
+    }
   };
 
   const handleConvertQuotation = async (quote: Transaction) => {
     // Open Invoice Modal preloaded with quote line items converted to a Sale
-    setInvoiceType('sale');
+    setInvoiceType("sale");
     setEditingTransaction({
       ...quote,
       invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-      type: 'sale',
+      type: "sale",
     });
     setIsInvoiceModalOpen(true);
   };
 
   // Party Handlers
-  const openAddPartyModal = (type: PartyType = 'customer') => {
+  const openAddPartyModal = (type: PartyType = "customer") => {
     setEditingParty(null);
     setDefaultPartyType(type);
     setIsPartyModalOpen(true);
   };
 
-  const handleSaveParty = async (partyData: Omit<Party, 'id' | 'createdAt' | 'currentBalance'>) => {
+  const handleSaveParty = async (
+    partyData: Omit<Party, "id" | "createdAt" | "currentBalance">,
+  ) => {
     if (editingParty) {
       await api.updateParty(editingParty.id, partyData);
     } else {
@@ -182,8 +233,12 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteParty = async (id: string) => {
-    await api.deleteParty(id);
-    await loadData();
+    try {
+      await api.deleteParty(id);
+      await loadData();
+    } catch (e: any) {
+      alert(e.message);
+    }
   };
 
   // Item Handlers
@@ -192,7 +247,7 @@ export const App: React.FC = () => {
     setIsItemModalOpen(true);
   };
 
-  const handleSaveItem = async (itemData: Omit<Item, 'id' | 'createdAt'>) => {
+  const handleSaveItem = async (itemData: Omit<Item, "id" | "createdAt">) => {
     if (editingItem) {
       await api.updateItem(editingItem.id, itemData);
     } else {
@@ -202,8 +257,12 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    await api.deleteItem(id);
-    await loadData();
+    try {
+      await api.deleteItem(id);
+      await loadData();
+    } catch (e: any) {
+      alert(e.message);
+    }
   };
 
   const handleAdjustStock = async (id: string, delta: number) => {
@@ -212,18 +271,24 @@ export const App: React.FC = () => {
   };
 
   // Expense Handlers
-  const handleAddExpense = async (expData: Omit<Expense, 'id' | 'createdAt'>) => {
+  const handleAddExpense = async (
+    expData: Omit<Expense, "id" | "createdAt">,
+  ) => {
     await api.createExpense(expData);
     await loadData();
   };
 
   const handleDeleteExpense = async (id: string) => {
-    await api.deleteExpense(id);
-    await loadData();
+    try {
+      await api.deleteExpense(id);
+      await loadData();
+    } catch (e: any) {
+      alert(e.message);
+    }
   };
 
   // Cash & Bank Handlers
-  const handleAddAccount = async (accData: Omit<BankAccount, 'id'>) => {
+  const handleAddAccount = async (accData: Omit<BankAccount, "id">) => {
     await api.createAccount(accData);
     await loadData();
   };
@@ -232,7 +297,7 @@ export const App: React.FC = () => {
     fromId: string,
     toId: string,
     amount: number,
-    notes?: string
+    notes?: string,
   ) => {
     await api.transferFunds(fromId, toId, amount, notes);
     await loadData();
@@ -244,7 +309,9 @@ export const App: React.FC = () => {
     setProfile(updated);
   };
 
-  const handleUpdatePrintSettings = async (pSettings: Partial<PrintSettings>) => {
+  const handleUpdatePrintSettings = async (
+    pSettings: Partial<PrintSettings>,
+  ) => {
     const updated = await api.updatePrintSettings(pSettings);
     setPrintSettings(updated);
   };
@@ -256,37 +323,84 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      <UIAccessibility />
       {/* Sidebar Navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <button
+        className="mobile-menu no-print"
+        aria-label="Open navigation"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        ☰ <span>Viper</span>
+      </button>
+      {menuOpen && (
+        <button
+          className="sidebar-backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      <div
+        className={menuOpen ? "navigation-shell is-open" : "navigation-shell"}
+      >
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setLowStockOnly(false);
+            setMenuOpen(false);
+          }}
+        />
+      </div>
 
       {/* Main App Container */}
       <div className="main-content">
         <TopHeader
           profile={profile}
-          onOpenSaleModal={() => openNewInvoiceModal('sale')}
-          onOpenPurchaseModal={() => openNewInvoiceModal('purchase')}
-          onOpenPOS={() => setActiveTab('pos')}
+          onOpenSaleModal={() => openNewInvoiceModal("sale")}
+          onOpenPurchaseModal={() => openNewInvoiceModal("purchase")}
+          onOpenPOS={() => setActiveTab("pos")}
           onOpenSearch={() => setIsSearchModalOpen(true)}
           theme={theme}
           setTheme={setTheme}
         />
 
+        {dataError && (
+          <div role="alert" className="error-banner load-error">
+            Could not load data: {dataError}
+            <div className="action-row">
+              <button className="btn btn-secondary" onClick={loadData}>
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+        {loading && (
+          <div role="status" className="loading-banner">
+            Loading business data…
+          </div>
+        )}
+        {native && profile && !profile.phone && <div className="loading-banner" role="status">Welcome to Viper. Set your business name and phone number below. All records stay on this device.</div>}
         {/* Dynamic View Router */}
-        {activeTab === 'dashboard' && (
+        {activeTab === "dashboard" && (
           <DashboardView
             stats={stats}
-            onOpenSale={() => openNewInvoiceModal('sale')}
-            onOpenPurchase={() => openNewInvoiceModal('purchase')}
-            onOpenPOS={() => setActiveTab('pos')}
-            onOpenItemModal={openAddItemModal}
+            onOpenSale={() => openNewInvoiceModal("sale")}
+            onOpenPurchase={() => openNewInvoiceModal("purchase")}
+            onOpenPOS={() => setActiveTab("pos")}
+            onOpenItemModal={() => {
+              setLowStockOnly(true);
+              setActiveTab("items");
+            }}
             onViewTransaction={(txn) => {
+              setThermalPrint(false);
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
           />
         )}
 
-        {activeTab === 'parties' && (
+        {activeTab === "parties" && (
           <PartiesView
             parties={parties}
             onOpenAddParty={openAddPartyModal}
@@ -303,8 +417,9 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'items' && (
+        {activeTab === "items" && (
           <ItemsView
+            initiallyLowStock={lowStockOnly}
             items={items}
             onOpenAddItem={openAddItemModal}
             onEditItem={(item) => {
@@ -316,11 +431,12 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'sales' && (
+        {activeTab === "sales" && (
           <SalesView
             transactions={transactions}
             onOpenSaleModal={openNewInvoiceModal}
             onViewTransaction={(txn) => {
+              setThermalPrint(false);
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
@@ -329,11 +445,12 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'purchases' && (
+        {activeTab === "purchases" && (
           <PurchasesView
             transactions={transactions}
             onOpenPurchaseModal={(type) => openNewInvoiceModal(type)}
             onViewTransaction={(txn) => {
+              setThermalPrint(false);
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
@@ -341,22 +458,25 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'pos' && (
-          <PosView
-            items={items}
-            parties={parties}
-            onCompleteCheckout={async (txnPayload, thenPrint) => {
-              const created = await api.createTransaction(txnPayload);
-              await loadData();
-              if (thenPrint) {
-                setPrintTargetTxn(created);
-                setIsPrintModalOpen(true);
-              }
-            }}
-          />
-        )}
+        {
+          <div hidden={activeTab !== "pos"}>
+            <PosView
+              items={items}
+              parties={parties}
+              onCompleteCheckout={async (txnPayload, thenPrint) => {
+                const created = await api.createTransaction(txnPayload);
+                await loadData();
+                if (thenPrint) {
+                  setThermalPrint(true);
+                  setPrintTargetTxn(created);
+                  setIsPrintModalOpen(true);
+                }
+              }}
+            />
+          </div>
+        }
 
-        {activeTab === 'expenses' && (
+        {activeTab === "expenses" && (
           <ExpensesView
             expenses={expenses}
             categories={expenseCategories}
@@ -366,7 +486,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'cash-bank' && (
+        {activeTab === "cash-bank" && (
           <CashBankView
             accounts={accounts}
             onAddAccount={handleAddAccount}
@@ -374,7 +494,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'reports' && (
+        {activeTab === "reports" && (
           <ReportsView
             pnlReport={pnlReport}
             gstReport={gstReport}
@@ -383,15 +503,17 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'settings' && (
-          <SettingsView
-            profile={profile}
-            printSettings={printSettings}
-            onUpdateProfile={handleUpdateProfile}
-            onUpdatePrintSettings={handleUpdatePrintSettings}
-            onRestoreBackup={handleRestoreBackup}
-            backupDownloadUrl={api.exportBackupUrl()}
-          />
+        {activeTab === "settings" && (
+          <div>
+            <SettingsView
+              profile={profile}
+              printSettings={printSettings}
+              onUpdateProfile={handleUpdateProfile}
+              onUpdatePrintSettings={handleUpdatePrintSettings}
+              onRestoreBackup={handleRestoreBackup}
+              backupDownloadUrl={api.exportBackupUrl()}
+            />
+          </div>
         )}
       </div>
 
@@ -403,26 +525,39 @@ export const App: React.FC = () => {
         items={items}
         transactions={transactions}
         onSelectParty={(party) => {
-          setActiveTab('parties');
+          setActiveTab("parties");
         }}
         onSelectItem={(item) => {
-          setActiveTab('items');
+          setActiveTab("items");
         }}
         onSelectTransaction={(txn) => {
+          setThermalPrint(false);
           setPrintTargetTxn(txn);
           setIsPrintModalOpen(true);
         }}
       />
 
-      <InvoiceModal
-        isOpen={isInvoiceModalOpen}
-        onClose={() => setIsInvoiceModalOpen(false)}
-        onSave={handleSaveTransaction}
-        type={invoiceType}
-        parties={parties}
-        items={items}
-        initialData={editingTransaction}
-      />
+      {(invoiceType === "payment_in" || invoiceType === "payment_out") &&
+      isInvoiceModalOpen ? (
+        <PaymentModal
+          type={invoiceType}
+          parties={parties}
+          transactions={transactions}
+          onSave={handleSaveTransaction}
+          onClose={() => setIsInvoiceModalOpen(false)}
+        />
+      ) : (
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          onSave={handleSaveTransaction}
+          type={invoiceType}
+          parties={parties}
+          items={items}
+          initialData={editingTransaction}
+          transactions={transactions}
+        />
+      )}
 
       <PartyModal
         isOpen={isPartyModalOpen}
@@ -444,7 +579,11 @@ export const App: React.FC = () => {
         onClose={() => setIsPrintModalOpen(false)}
         transaction={printTargetTxn}
         profile={profile}
-        printSettings={printSettings}
+        printSettings={
+          thermalPrint
+            ? { ...printSettings, paperSize: "thermal_80mm" }
+            : printSettings
+        }
       />
 
       <WhatsAppModal

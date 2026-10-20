@@ -1,0 +1,94 @@
+{
+  "profile": {
+    "id": "business",
+    "name": "Offline QA Business",
+    "tradeName": "",
+    "gstin": "",
+    "phone": "1234567890",
+    "email": "",
+    "address": "Isolated emulator",
+    "city": "",
+    "state": "",
+    "pincode": "",
+    "upiId": "",
+    "bankName": "",
+    "accountNumber": "",
+    "ifsc": "",
+    "termsAndConditions": ""
+  },
+  "parties": [
+    {
+      "name": "Customer QA",
+      "type": "customer",
+      "phone": "1234567890",
+      "billingAddress": "",
+      "openingBalance": 0,
+      "creditLimit": 10000,
+      "id": "party-fb35770e-1b4b-4100-b58c-958647f5b9ce",
+      "createdAt": "2026-10-20T16:58:31.494Z",
+      "currentBalance": 0
+    }
+  ],
+  "items": [
+    {
+      "name": "QA Item",
+      "code": "QA-1",
+      "barcode": "12345678",
+      "category": "General",
+      "unit": "Pcs",
+      "purchasePrice": 60,
+      "salesPrice": 100,
+      "mrp": 100,
+      "taxRate": 0,
+      "minStockAlert": 1,
+      "currentStock": 5,
+      "godownId": "godown-1",
+      "id": "item-1001fa2a-c989-46b9-8425-c63540257617",
+      "createdAt": "2026-10-20T16:58:31.498Z"
+    }
+  ],
+  "transactions": [],
+  "expenses": [],
+  "ledgers": [],
+  "transfers": [],
+  "godowns": [
+    {
+      "id": "godown-1",
+      "name": "Main stock",
+      "location": "",
+      "isDefault": true
+    }
+  ],
+  "expenseCategories": [
+    {
+      "id": "general",
+      "name": "General expense",
+      "type": "indirect"
+    }
+  ],
+  "accounts": [
+    {
+      "id": "cash",
+      "name": "Cash in hand",
+      "type": "cash",
+      "balance": 0,
+      "isDefault": true
+    },
+    {
+      "id": "bank",
+      "name": "Bank account",
+      "type": "bank",
+      "balance": 0,
+      "isDefault": true
+    }
+  ],
+  "printSettings": {
+    "paperSize": "laser_a4",
+    "themeColor": "#C62828",
+    "companyLogo": true,
+    "signature": true,
+    "upiQr": true,
+    "taxBreakup": true,
+    "notesAndTerms": true
+  }
+}

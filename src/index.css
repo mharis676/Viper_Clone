@@ -775,3 +775,124 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid #ddd;
   border-radius: 8px;
 }
+
+/* Insets are supplied by modern WebView; Capacitor pads older WebViews natively.
+   QA overrides let the same layout be exercised with cutouts in browser tests. */
+:root {
+  --safe-top: var(--test-safe-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--test-safe-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-left: var(--test-safe-left, env(safe-area-inset-left, 0px));
+  --safe-right: var(--test-safe-right, env(safe-area-inset-right, 0px));
+}
+html { min-width: 0; scroll-padding-top: calc(130px + var(--safe-top)); scroll-padding-bottom: calc(16px + var(--safe-bottom)); }
+body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: var(--safe-top); background: var(--bg-header); z-index: 150; pointer-events: none; }
+.app-container { min-height: 100dvh; padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); }
+.sidebar { padding: var(--safe-top) 0 var(--safe-bottom) var(--safe-left); width: calc(var(--sidebar-width) + var(--safe-left)); }
+.top-header { top: var(--safe-top); height: auto; min-height: var(--header-height); gap: 12px; flex-wrap: wrap; padding: 12px 20px; }
+.header-left,.header-right { flex-wrap: wrap; min-width: 0; gap: 8px; }
+.company-pill { flex-wrap: wrap; min-width: 0; }
+.page-body,.page-header,.card,.pos-left,.pos-right { min-width: 0; }
+.page-header { flex-wrap: wrap; gap: 16px; }
+.page-header > div { min-width: 0; }
+.page-header > div:last-child { display: flex; flex-wrap: wrap; }
+.page-body > div[style*="display: flex"] { flex-wrap: wrap; }
+.page-body > div[style*="display: flex"] > div { min-width: 0; max-width: 100%; flex-wrap: wrap; }
+.data-table-wrapper { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+.btn,.btn-icon { min-height: 44px; touch-action: manipulation; }
+.btn-icon { min-width: 44px; display: inline-flex; justify-content: center; align-items: center; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.form-input,.form-select,.form-textarea { min-width: 0; max-width: 100%; }
+.form-group { min-width: 0; }
+.action-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.checkbox-label { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.invoice-form { display: flex; flex-direction: column; gap: 16px; }
+.error-banner { padding: 16px; border: 1px solid var(--danger); border-radius: 8px; background: var(--bg-card); color: var(--danger); overflow-wrap: anywhere; }
+.load-error,.loading-banner,.connection-settings { margin: 16px; }
+.loading-banner { color: var(--text-secondary); }
+.modal-overlay { inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); padding: 12px; }
+.modal-card { max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 24px); }
+.modal-card > form { display: flex; flex-direction: column; min-height: 0; max-height: inherit; }
+.modal-header,.modal-footer { flex-shrink: 0; gap: 10px; flex-wrap: wrap; }
+.modal-header > div { min-width: 0; }
+.modal-body { min-height: 0; overscroll-behavior: contain; }
+.modal-footer { padding: 12px 16px; }
+.modal-header h3 { overflow-wrap: anywhere; }
+.pos-container { height: auto; min-height: calc(100dvh - 100px - var(--safe-top) - var(--safe-bottom)); overflow: visible; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); }
+.pos-product-card { text-align: left; color: var(--text-primary); font: inherit; }
+.pos-tab { flex-shrink: 0; }
+.pos-cart-items { max-height: 55dvh; }
+.mobile-menu,.sidebar-backdrop { display: none; }
+.connection-screen { min-height: 100dvh; display: grid; place-items: center; padding: calc(var(--safe-top) + 24px) calc(var(--safe-right) + 16px) calc(var(--safe-bottom) + 24px) calc(var(--safe-left) + 16px); }
+.connection-card { display: flex; flex-direction: column; gap: 20px; padding: 24px; width: min(100%, 480px); }
+[hidden] { display: none !important; }
+@media (max-width: 1100px) {
+  .pos-container { grid-template-columns: minmax(0, 1fr); }
+  .pos-left { border-right: 0; }
+  .pos-right { border-top: 1px solid var(--border-color); }
+  .quick-search-btn { min-width: 44px; }
+  .search-shortcut-badge { display: none; }
+}
+@media (max-width: 800px) {
+  .app-container { display: block; }
+  .main-content { margin-left: 0; }
+  .mobile-menu { display: flex; align-items: center; gap: 12px; border: 0; background: var(--bg-header); color: var(--text-primary); padding: 8px 16px; width: 100%; height: 48px; position: sticky; top: var(--safe-top); z-index: 99; font: 700 18px var(--font-family); }
+  .navigation-shell .sidebar { transform: translateX(-100%); visibility: hidden; width: min(300px, calc(100vw - 48px)); z-index: 180; }
+  .navigation-shell.is-open .sidebar { transform: translateX(0); visibility: visible; }
+  .sidebar-backdrop { display: block; position: fixed; inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left); background: #0008; border: 0; z-index: 170; }
+  .top-header { top: calc(var(--safe-top) + 48px); padding: 10px 12px; }
+  .header-left { flex: 1 1 100%; justify-content: space-between; }
+  .header-right { width: 100%; }
+  .header-right > .btn { flex: 1; padding: 8px; }
+  .header-right .btn span:last-child:not(:first-of-type) { display: none; }
+  .quick-search-btn { padding: 10px; }
+  .quick-search-btn span { display: none; }
+  .company-pill { padding: 6px 10px; max-width: calc(100% - 56px); }
+  .company-pill > span:last-child { font-size: 11px !important; }
+  .page-body { padding: 16px 12px; gap: 18px; }
+  .page-title { font-size: 1.3rem; }
+  .page-header { align-items: flex-start; }
+  .page-header > div:last-child { width: 100%; gap: 8px !important; }
+  .page-header > div:last-child .btn { flex: 1; }
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+  .modal-header,.modal-body { padding: 14px; }
+  .modal-body div[style*="grid-template-columns"] { grid-template-columns: minmax(0,1fr) !important; }
+  .modal-body .data-table { min-width: 720px; }
+  .modal-body .invoice-items-table { min-width: 0; display: block; }
+  .invoice-items-table thead { display: none; }
+  .invoice-items-table tbody { display: block; }
+  .invoice-items-table tbody tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 10px; border-bottom: 1px solid var(--border-color); }
+  .invoice-items-table td { display: flex; flex-direction: column; padding: 6px; border: 0; min-width: 0; }
+  .invoice-items-table td:first-child { grid-column: 1 / -1; }
+  .invoice-items-table td::before { font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text-secondary); }
+  .invoice-items-table td:nth-child(1)::before { content: 'Item'; }
+  .invoice-items-table td:nth-child(2)::before { content: 'Quantity'; }
+  .invoice-items-table td:nth-child(3)::before { content: 'Price'; }
+  .invoice-items-table td:nth-child(4)::before { content: 'Discount %'; }
+  .invoice-items-table td:nth-child(5)::before { content: 'GST rate'; }
+  .invoice-items-table td:nth-child(6)::before { content: 'Line total'; }
+  .modal-body .laser-invoice table { min-width: 0; }
+  .modal-footer .btn { flex: 1 1 100px; }
+  .modal-header > div { flex-wrap: wrap; }
+  .pos-cart-header { flex-wrap: wrap; gap: 10px; }
+  .pos-cart-header .form-select { width: 100% !important; }
+  .pos-cart-item { flex-wrap: wrap; }
+  .pos-cart-summary { padding: 16px; }
+  input,select,textarea { font-size: 16px !important; }
+  .thermal-receipt { max-width: 100%; }
+  .laser-invoice { padding: 12px; min-width: 0; }
+}
+@media print {
+  body::before,.mobile-menu,.sidebar-backdrop,.loading-banner,.load-error { display: none !important; }
+  .app-container { padding: 0; display: block; }
+  body:has(.modal-overlay) .page-body, body:has(.modal-overlay) .pos-container { display: none !important; }
+  .modal-overlay { position: static; padding: 0; display: block; background: white; backdrop-filter: none; }
+  .modal-card,.modal-card > form,.modal-body { max-height: none; height: auto; overflow: visible; border: 0; box-shadow: none; animation: none; }
+  .modal-header,.modal-footer { display: none !important; }
+  .modal-body { padding: 0 !important; }
+  .main-content { margin: 0; }
+  .laser-invoice { border: 0; padding: 0; }
+  .print-area div[style*="grid-template-columns"] { grid-template-columns: 1.2fr 1fr !important; }
+  tr { break-inside: avoid; }
+  .no-print { display: none !important; }
+}

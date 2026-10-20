@@ -150,18 +150,18 @@ export const PartyModal: React.FC<PartyModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group">
-                <label className="form-label">GSTIN / Tax ID</label>
+                <label className="form-label">Tax Registration ID</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="29ABCDE1234F1Z5"
+                  placeholder="Tax registration number (optional)"
                   value={gstin}
                   onChange={(e) => setGstin(e.target.value.toUpperCase())}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Credit Limit (₹)</label>
+                <label className="form-label">Credit Limit (PKR)</label>
                 <input
                   type="number"
                   min="0"
@@ -184,7 +184,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Opening Balance (₹)</label>
+              <label className="form-label">Opening Balance (PKR)</label>
               <input
                 type="number"
                 className="form-input"

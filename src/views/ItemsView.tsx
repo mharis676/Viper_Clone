@@ -14,6 +14,7 @@ import { Item } from '../types.js';
 
 interface ItemsViewProps {
   items: Item[];
+  initiallyLowStock?: boolean;
   onOpenAddItem: () => void;
   onEditItem: (item: Item) => void;
   onDeleteItem: (id: string) => void;
@@ -22,6 +23,7 @@ interface ItemsViewProps {
 
 export const ItemsView: React.FC<ItemsViewProps> = ({
   items,
+  initiallyLowStock = false,
   onOpenAddItem,
   onEditItem,
   onDeleteItem,
@@ -29,7 +31,7 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [onlyLowStock, setOnlyLowStock] = useState<boolean>(false);
+  const [onlyLowStock, setOnlyLowStock] = useState<boolean>(initiallyLowStock);
   const [adjustingItem, setAdjustingItem] = useState<Item | null>(null);
   const [adjustDelta, setAdjustDelta] = useState<number>(1);
   const [adjustMode, setAdjustMode] = useState<'add' | 'reduce'>('add');
@@ -124,8 +126,8 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
                 <th>Item Name & Code</th>
                 <th>Category</th>
                 <th>Barcode</th>
-                <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
-                <th style={{ textAlign: 'right' }}>Selling Price (₹)</th>
+                <th style={{ textAlign: 'right' }}>Cost Price (PKR)</th>
+                <th style={{ textAlign: 'right' }}>Selling Price (PKR)</th>
                 <th>Tax Rate</th>
                 <th>Stock Quantity</th>
                 <th>Status</th>
@@ -151,8 +153,8 @@ export const ItemsView: React.FC<ItemsViewProps> = ({
                         <span>{item.barcode}</span>
                       </div>
                     </td>
-                    <td style={{ textAlign: 'right' }}>₹{item.purchasePrice.toLocaleString()}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{item.salesPrice.toLocaleString()}</td>
+                    <td style={{ textAlign: 'right' }}>PKR {item.purchasePrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>PKR {item.salesPrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</td>
                     <td>
                       <span className="badge badge-paid">GST {item.taxRate}%</span>
                     </td>

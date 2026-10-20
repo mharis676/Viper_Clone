@@ -73,6 +73,7 @@ export type PaymentMode = 'cash' | 'bank' | 'upi' | 'cheque';
 export type PaymentStatus = 'paid' | 'unpaid' | 'partial';
 
 export interface TransactionItem {
+  costPrice?: number;
   itemId: string;
   itemName: string;
   itemCode: string;
@@ -88,6 +89,13 @@ export interface TransactionItem {
 }
 
 export interface Transaction {
+  payments?: { mode: PaymentMode; amount: number }[];
+  interstate?: boolean;
+  originalTransactionId?: string;
+  initialPaidAmount?: number;
+  creditedAmount?: number;
+  allocations?: { invoiceId: string; amount: number }[];
+  effects?: { party: number; accountId?: string; accountPostings?: { accountId: string; amount: number }[]; cash: number; stock: { itemId: string; delta: number }[] };
   id: string;
   invoiceNumber: string;
   type: TransactionType;

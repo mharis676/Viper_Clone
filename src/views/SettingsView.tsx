@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { api } from '../api.js';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Building,
@@ -46,6 +47,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [ifsc, setIfsc] = useState(profile?.ifsc || '');
   const [terms, setTerms] = useState(profile?.termsAndConditions || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => { if (!profile) return;
+    setName(profile.name || '');
+    setTradeName(profile.tradeName || '');
+    setGstin(profile.gstin || '');
+    setPhone(profile.phone || '');
+    setEmail(profile.email || '');
+    setAddress(profile.address || '');
+    setCity(profile.city || '');
+    setState(profile.state || '');
+    setPincode(profile.pincode || '');
+    setUpiId(profile.upiId || '');
+    setBankName(profile.bankName || '');
+    setAccountNumber(profile.accountNumber || '');
+    setIfsc(profile.ifsc || '');
+    setTerms(profile.termsAndConditions || '');
+  }, [profile]);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +122,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <span>Settings & Business Configuration</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Company GST details, thermal & laser print templates, bank UPI configurations, and data backups
+            Business details, thermal & laser print templates, bank details, and data backups
           </p>
         </div>
       </div>
@@ -168,10 +186,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
                 <div className="form-group">
-                  <label className="form-label">GSTIN / Tax ID *</label>
+                  <label className="form-label">Tax Registration ID (optional)</label>
                   <input
                     type="text"
-                    required
                     className="form-input"
                     value={gstin}
                     onChange={(e) => setGstin(e.target.value.toUpperCase())}
@@ -244,19 +261,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
-                <h4 style={{ marginBottom: 12, fontSize: '1rem' }}>Bank & UPI Payment Details for Invoices</h4>
+                <h4 style={{ marginBottom: 12, fontSize: '1rem' }}>Bank Payment Details for Invoices</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-                  <div className="form-group">
-                    <label className="form-label">UPI ID for Dynamic Payment QR Code</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="e.g. company@okhdfcbank"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                    />
-                  </div>
-
                   <div className="form-group">
                     <label className="form-label">Bank Name</label>
                     <input
@@ -268,7 +274,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Bank Account Number</label>
+                    <label className="form-label">Account Number / IBAN</label>
                     <input
                       type="text"
                       className="form-input"
@@ -278,7 +284,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Bank IFSC Code</label>
+                    <label className="form-label">Bank / Branch Code</label>
                     <input
                       type="text"
                       className="form-input"
@@ -348,15 +354,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
-                    checked={printSettings.upiQr}
-                    onChange={(e) => onUpdatePrintSettings({ upiQr: e.target.checked })}
-                  />
-                  <span>Show UPI Dynamic QR Code on Bill (Scan & Pay)</span>
-                </label>
-
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
                     checked={printSettings.signature}
                     onChange={(e) => onUpdatePrintSettings({ signature: e.target.checked })}
                   />
@@ -392,10 +389,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
                 Downloads all customers, suppliers, inventory stock, invoices, expenses, and accounts as a portable JSON snapshot.
               </p>
-              <a href={backupDownloadUrl} download className="btn btn-primary btn-sm">
+              <button onClick={() => api.downloadBackup().catch(e => alert(e.message))} className="btn btn-primary btn-sm">
                 <Download size={14} />
                 <span>Download Backup Now</span>
-              </a>
+              </button>
             </div>
 
             <div style={{ padding: 16, background: 'var(--bg-main)', borderRadius: 'var(--radius-md)' }}>
@@ -404,7 +401,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span>Restore Database from Backup</span>
               </h4>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Select a previously saved Vyapar JSON backup to restore all business data.
+                Select a previously saved Viper JSON backup to restore all business data.
               </p>
               <label className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', cursor: 'pointer' }}>
                 <Upload size={14} />

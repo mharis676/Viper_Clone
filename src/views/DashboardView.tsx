@@ -98,7 +98,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="kpi-value" style={{ color: '#2E7D32' }}>
-            ₹{stats.toCollect.toLocaleString()}
+            PKR {stats.toCollect.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From customers</div>
         </div>
@@ -111,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="kpi-value" style={{ color: '#D32F2F' }}>
-            ₹{stats.toPay.toLocaleString()}
+            PKR {stats.toPay.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To vendors / suppliers</div>
         </div>
@@ -123,7 +123,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Wallet size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{stats.cashInHand.toLocaleString()}</div>
+          <div className="kpi-value">PKR {stats.cashInHand.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Store till cash</div>
         </div>
 
@@ -134,7 +134,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Landmark size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{stats.bankBalance.toLocaleString()}</div>
+          <div className="kpi-value">PKR {stats.bankBalance.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total bank funds</div>
         </div>
 
@@ -145,7 +145,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ShoppingCart size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{stats.totalSales.toLocaleString()}</div>
+          <div className="kpi-value">PKR {stats.totalSales.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Invoices & POS bills</div>
         </div>
 
@@ -156,7 +156,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ShoppingBag size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{stats.totalPurchases.toLocaleString()}</div>
+          <div className="kpi-value">PKR {stats.totalPurchases.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Inbound inventory purchases</div>
         </div>
 
@@ -167,7 +167,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Package size={18} />
             </div>
           </div>
-          <div className="kpi-value">₹{stats.stockValue.toLocaleString()}</div>
+          <div className="kpi-value">PKR {stats.stockValue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>At cost price valuation</div>
         </div>
       </div>
@@ -190,8 +190,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <th>Party Name</th>
                 <th>Type</th>
                 <th>Payment Mode</th>
-                <th>Amount (₹)</th>
-                <th>Balance Due (₹)</th>
+                <th>Amount (PKR)</th>
+                <th>Balance Due (PKR)</th>
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Action</th>
               </tr>
@@ -208,9 +208,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <td style={{ textTransform: 'uppercase', fontSize: '0.8rem' }}>
                     {txn.paymentMode}
                   </td>
-                  <td style={{ fontWeight: 700 }}>₹{txn.total.toLocaleString()}</td>
+                  <td style={{ fontWeight: 700 }}>PKR {txn.total.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</td>
                   <td style={{ color: txn.balanceDue > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
-                    ₹{txn.balanceDue.toLocaleString()}
+                    PKR {txn.balanceDue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
                   </td>
                   <td>
                     <span className={`badge badge-${txn.status}`}>{txn.status}</span>
