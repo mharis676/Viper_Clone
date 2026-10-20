@@ -3,7 +3,7 @@ import cors from 'cors';
 import { db } from './db.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -262,7 +262,19 @@ app.get('*', (req: Request, res: Response) => {
 export default app;
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Vyapar API server running on port ${PORT}`);
-  });
+  const host = '127.0.0.1';
+  const startServer = (port: number) => {
+    const serverInstance = app.listen(port, host, () => {
+      console.log(`Vyapar Application server running at http://${host}:${port}`);
+    });
+    serverInstance.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`Port ${port} in use, attempting port ${port + 1}...`);
+        startServer(port + 1);
+      } else {
+        console.error('Server error:', err);
+      }
+    });
+  };
+  startServer(Number(PORT));
 }
