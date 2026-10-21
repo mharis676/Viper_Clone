@@ -1,8 +1,7 @@
 name: Android APK
 on:
   push:
-    branches: [main, master]
-  pull_request:
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:
@@ -10,7 +9,6 @@ permissions:
 
 jobs:
   apk:
-    needs: system-bars
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +24,13 @@ jobs:
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci
-      - run: npm run type-check
-      - run: npm test
       - name: Build web app and sync Android
         run: npm run android:sync
-      - name: Validate and build APK
+      - name: Build APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+          ./gradlew :app:assembleDebug
       - name: Prepare release signing
         if: vars.VIPER_SIGNED_RELEASE == 'true' && github.event_name != 'pull_request'
         env:
@@ -69,56 +65,3 @@ jobs:
           name: Viper-release-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: Android-build-reports
-          path: android/app/build/reports/
-
-  system-bars:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        api: [35, 36]
-        navigation: [gestural, threebutton]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-      - uses: android-actions/setup-android@v3
-      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - uses: gradle/actions/setup-gradle@v4
-      - run: npm ci
-      - run: npm run android:sync
-      - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: Check system bar insets on Android
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api }}
-          arch: x86_64
-          profile: pixel_6
-          disable-animations: true
-          script: |
-            adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.${{ matrix.navigation }}
-            adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.tall
-            adb shell svc wifi disable
-            adb shell svc data disable
-            cd android && chmod +x gradlew && ./gradlew :app:connectedDebugAndroidTest
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: system-bars-${{ matrix.api }}-${{ matrix.navigation }}
-          path: |
-            android/app/build/reports/androidTests/
-            android/app/build/outputs/androidTest-results/

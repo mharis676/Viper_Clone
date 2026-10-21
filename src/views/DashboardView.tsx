@@ -36,27 +36,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }
 
   return (
-    <div className="page-body">
-      <div className="page-header">
+    <div className="page-body dashboard-page">
+      <div className="page-header dashboard-heading">
         <div>
+          <span className="workspace-eyebrow">YOUR WORKSPACE <span>PKR</span></span>
           <h2 className="page-title">Business Overview</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Real-time financial status, inventory valuation, and cash flow summary
+            A clear view of your money, stock and recent activity.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="dashboard-actions">
           <button className="btn btn-pos" onClick={onOpenPOS}>
             <CreditCard size={16} />
-            <span>POS Counter (F2)</span>
+            <span>Open POS</span>
           </button>
           <button className="btn btn-primary" onClick={onOpenSale}>
             <Plus size={16} />
-            <span>New Sale (Alt+S)</span>
+            <span>New Sale</span>
           </button>
           <button className="btn btn-secondary" onClick={onOpenPurchase}>
             <Plus size={16} />
-            <span>New Purchase (Alt+P)</span>
+            <span>Purchase</span>
           </button>
         </div>
       </div>
@@ -92,7 +93,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="kpi-grid">
         <div className="kpi-card" style={{ '--card-accent': '#2E7D32' } as React.CSSProperties}>
           <div className="kpi-header">
-            <span>You'll Receive (To Collect)</span>
+            <span>To collect</span>
             <div className="kpi-icon-wrap" style={{ background: '#E8F5E9', color: '#2E7D32' }}>
               <ArrowDownLeft size={18} />
             </div>
@@ -105,7 +106,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="kpi-card" style={{ '--card-accent': '#D32F2F' } as React.CSSProperties}>
           <div className="kpi-header">
-            <span>You'll Give (To Pay)</span>
+            <span>To pay</span>
             <div className="kpi-icon-wrap" style={{ background: '#FFEBEE', color: '#D32F2F' }}>
               <ArrowUpRight size={18} />
             </div>
@@ -175,13 +176,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Recent Transactions Table */}
       <div className="card">
         <div className="card-header">
-          <div className="card-title">Recent Invoices & Transactions</div>
+          <div className="card-title">Recent activity</div>
           <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Showing latest {stats.recentTransactions.length} records
+            {stats.recentTransactions.length ? `Latest ${stats.recentTransactions.length} records` : "No transactions yet"}
           </div>
         </div>
 
-        <div className="data-table-wrapper">
+        {stats.recentTransactions.length === 0 ? (
+          <div className="dashboard-empty">
+            <span className="empty-symbol"><ShoppingCart size={28} /></span>
+            <h3>Your first sale starts here</h3>
+            <p>Create an invoice to see your recent activity. Your totals will update automatically.</p>
+            <button className="btn btn-primary" onClick={onOpenSale}><Plus size={16} /> Create an invoice</button>
+          </div>
+        ) : <div className="data-table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -228,7 +236,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
+        </div>}
       </div>
     </div>
   );

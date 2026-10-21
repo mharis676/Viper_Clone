@@ -4,9 +4,9 @@ The Android application is **Viper**, package ID `com.viper.business`, min SDK 2
 
 ## GitHub Actions
 
-Push the changes to `main`/`master` or manually run **Android APK**. Pull requests also run the workflow. It uses Node 22 and Java 21, runs type checks and API regressions, builds the web assets, syncs Capacitor, runs Android lint, and uploads **Viper-debug-apk**. Nothing in the workflow installs the app on a user's phone.
+Every branch push starts only **Android APK**, with one APK build job. It installs build dependencies, bundles the web app, syncs Capacitor and assembles the APK. It uploads **Viper-debug-apk**, plus **Viper-release-apk** when release signing is configured. Nothing installs on a user's phone.
 
-A separate job runs an emulator matrix for Android API 35/36, gesture/three-button navigation, a tall display cutout, and portrait/landscape. These instrumentation tests check the native inset bounds of invoice controls, plus empty setup, offline invoice/payment/return/reopen flows and Android print/share dialogs. Web UI checks cover invoice safe-area spacing; device matrix results must be reviewed in Actions before release.
+Tests, lint and the Android API 35/36 gesture/three-button emulator matrix are manual-only in **CI / Build & Test**. Start that workflow from Actions when you want a full QA run. Pull requests do not automatically start either workflow.
 
 The default artifact is a debug APK for testing. For a signed release with a consistent update key:
 
@@ -20,7 +20,7 @@ Release version codes follow the workflow run number. If an existing installatio
 
 A new install starts empty and opens Business Profile setup. Business data is saved in app-private SQLite with full synchronous transactional writes, versioned compare-and-save protection, and five recovery snapshots. Success is reported only after the native write commits. Corrupt data is reported rather than replaced. No backend URL, access token or internet connection is required.
 
-Export backups from Settings and share them to a safe location. Uninstalling or clearing app data removes the local database; automatic Android cloud backup is disabled. Restore validates the entire backup before replacing data. Recovery snapshots are on the same device and do not replace exported backups.
+Open **Backup & Restore** in the main menu (also available under Settings). Choose **Export Backup** to download a timestamped JSON file in a browser or open the Android share sheet. Save/share that file to a safe location. Use **Choose Backup File** to restore it; confirmation and full validation run before current records are replaced. Uninstalling or clearing app data removes the local database; automatic Android cloud backup is disabled. Restore validates the entire backup before replacing data. Recovery snapshots are on the same device and do not replace exported backups.
 
 Currency is PKR throughout the UI, printed invoices and exports. Changing denomination preserves existing numeric values; it does not convert historical INR amounts. Indian UPI QR payment requests are disabled. Existing tax calculation fields are retained for compatibility; configure the rates appropriate for your business.
 

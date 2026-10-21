@@ -41,3 +41,5 @@ PKR labels and Pakistan number formatting are applied throughout the UI, invoice
 Final native polish removes the unwanted Android action/title bar before enabling edge-to-edge. Verified invoice header and actions clear the status bar and three-button navigation area: [portrait](android-final/invoice-portrait-safe-area.png), [landscape](android-final/invoice-landscape-safe-area.png).
 
 Native print verification checks that Android opens its print spooler. The emulator print-preview screenshot did not render reliably, so physical printer/PDF visual output remains a signed-artifact smoke check.
+
+Workflow update: pushes now run only the single Android APK build job, without CI/emulator/test jobs. Full QA remains available by manually running CI / Build & Test. Backup & Restore is directly accessible from the main menu; exports use timestamped names and restore asks before replacement.

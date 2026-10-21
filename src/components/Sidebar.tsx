@@ -12,6 +12,7 @@ import {
   Settings,
   Store,
   Layers,
+  Download,
 } from 'lucide-react';
 
 export type ActiveTab =
@@ -24,7 +25,8 @@ export type ActiveTab =
   | 'expenses'
   | 'cash-bank'
   | 'reports'
-  | 'settings';
+  | 'settings'
+  | 'backup';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -40,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         </div>
         <div>
           <span className="sidebar-title">Viper</span>
-          <span className="sidebar-badge" style={{ marginLeft: 6 }}>PRO</span>
+          <span className="sidebar-badge" style={{ marginLeft: 6 }}>BUSINESS</span>
         </div>
       </div>
 
@@ -121,6 +123,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         >
           <FileBarChart size={18} />
           <span>Reports & GST</span>
+        </button>
+
+        <button
+          className={`nav-item ${activeTab === 'backup' ? 'active' : ''}`}
+          onClick={() => setActiveTab('backup')}
+        >
+          <Download size={18} />
+          <span>Backup & Restore</span>
         </button>
 
         <button

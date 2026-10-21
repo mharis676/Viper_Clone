@@ -503,15 +503,16 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === "settings" && (
+        {(activeTab === "settings" || activeTab === "backup") && (
           <div>
             <SettingsView
+              key={activeTab}
+              initialTab={activeTab === "backup" ? "backup" : "profile"}
               profile={profile}
               printSettings={printSettings}
               onUpdateProfile={handleUpdateProfile}
               onUpdatePrintSettings={handleUpdatePrintSettings}
               onRestoreBackup={handleRestoreBackup}
-              backupDownloadUrl={api.exportBackupUrl()}
             />
           </div>
         )}

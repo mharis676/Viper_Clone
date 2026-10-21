@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Settings,
   Building,
@@ -18,7 +18,7 @@ interface SettingsViewProps {
   onUpdateProfile: (profile: Partial<BusinessProfile>) => Promise<void>;
   onUpdatePrintSettings: (settings: Partial<PrintSettings>) => Promise<void>;
   onRestoreBackup: (backupData: any) => Promise<void>;
-  backupDownloadUrl: string;
+  initialTab?: 'profile' | 'print' | 'backup';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -27,9 +27,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateProfile,
   onUpdatePrintSettings,
   onRestoreBackup,
-  backupDownloadUrl,
+  initialTab = 'profile',
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'print' | 'backup'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'print' | 'backup'>(initialTab);
+
+  const backupFileInput = useRef<HTMLInputElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [backupError, setBackupError] = useState('');
+  const exportBackup = async () => {
+    setExporting(true); setBackupError('');
+    try { await api.downloadBackup(); }
+    catch (error: any) { setBackupError(error.message || 'Could not export backup. Please try again.'); }
+    finally { setExporting(false); }
+  };
 
   // Profile form state
   const [name, setName] = useState(profile?.name || '');
@@ -93,24 +104,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
-  const handleBackupFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleBackupFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
-        if (confirm('Restoring this backup will replace current database records. Proceed?')) {
-          await onRestoreBackup(json);
-          alert('Database restored successfully! Reloading...');
-          window.location.reload();
-        }
-      } catch (err: any) {
-        alert(`Invalid backup JSON file: ${err.message}`);
+    setBackupError('');
+    setRestoring(true);
+    try {
+      const json = JSON.parse(await file.text());
+      if (confirm('Restore this backup? It will replace your current business data. Export a backup of your current records first if you need to keep them.')) {
+        await onRestoreBackup(json);
+        alert('Business data restored successfully.');
       }
-    };
-    reader.readAsText(file);
+    } catch (error: any) {
+      setBackupError(`Could not restore backup: ${error.message}`);
+    } finally { input.value = ''; setRestoring(false); }
   };
 
   return (
@@ -119,10 +127,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div>
           <h2 className="page-title">
             <Settings size={24} color="var(--primary)" />
-            <span>Settings & Business Configuration</span>
+            <span>{activeTab === 'backup' ? 'Backup & Restore' : 'Settings & Business Configuration'}</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Business details, thermal & laser print templates, bank details, and data backups
+            {activeTab === 'backup' ? 'Export your data safely or restore a saved copy. No server required.' : 'Business details, thermal & laser print templates, bank details, and data backups'}
           </p>
         </div>
       </div>
@@ -378,41 +386,45 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {activeTab === 'backup' && (
         <div className="card" style={{ maxWidth: 700 }}>
           <div className="card-header">
-            <div className="card-title">Database Backup, Export & Disaster Recovery</div>
+            <div className="card-title">Keep your business data safe</div>
           </div>
           <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {backupError && <div role="alert" className="error-banner">{backupError}</div>}
             <div style={{ padding: 16, background: 'var(--bg-main)', borderRadius: 'var(--radius-md)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Download size={18} color="var(--primary)" />
-                <span>Export Complete Business Snapshot (JSON)</span>
+                <span>Create a complete backup</span>
               </h4>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Downloads all customers, suppliers, inventory stock, invoices, expenses, and accounts as a portable JSON snapshot.
+                Export your business profile, parties, items, invoices, payments, expenses and settings as a JSON file. On Android, choose where to save it using the share sheet. Keep a copy outside this device.
               </p>
-              <button onClick={() => api.downloadBackup().catch(e => alert(e.message))} className="btn btn-primary btn-sm">
+              <button onClick={exportBackup} disabled={exporting || restoring} className="btn btn-primary">
                 <Download size={14} />
-                <span>Download Backup Now</span>
+                <span>{exporting ? 'Preparing backup...' : 'Export Backup'}</span>
               </button>
             </div>
 
             <div style={{ padding: 16, background: 'var(--bg-main)', borderRadius: 'var(--radius-md)' }}>
               <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <Upload size={18} color="var(--secondary)" />
-                <span>Restore Database from Backup</span>
+                <span>Restore a saved backup</span>
               </h4>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
-                Select a previously saved Viper JSON backup to restore all business data.
+                Choose a Viper JSON backup. Restoring replaces current records after validation. Uninstalling the app or clearing its data removes local records, so export before doing either.
               </p>
-              <label className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', cursor: 'pointer' }}>
+              <button type="button" className="btn btn-secondary" disabled={exporting || restoring} onClick={() => backupFileInput.current?.click()}>
                 <Upload size={14} />
-                <span>Choose Backup File...</span>
+                <span>{restoring ? 'Restoring...' : 'Choose Backup File'}</span>
+              </button>
                 <input
+                  ref={backupFileInput}
                   type="file"
-                  accept=".json"
+                  disabled={exporting || restoring}
+                  aria-label="Choose backup JSON file"
+                  accept=".json,application/json"
                   style={{ display: 'none' }}
                   onChange={handleBackupFileSelect}
                 />
-              </label>
             </div>
           </div>
         </div>

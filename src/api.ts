@@ -161,7 +161,7 @@ export const api = {
   downloadBackup: async () => {
     const backup = await request<unknown>("/backup");
     await exportFile(
-      "viper-backup.json",
+      `viper-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
       JSON.stringify(backup, null, 2),
       "application/json",
     );

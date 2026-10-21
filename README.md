@@ -42,3 +42,5 @@ Android works without a server or internet. A new install starts empty and opens
 [Fix verification](qa/FIX-VERIFICATION.md) records changes and validation limits. [Original QA report](qa/QA-REPORT.md) and its probe output preserve pre-fix findings; they are historical evidence rather than current pass/fail results.
 
 Amounts are denominated in PKR; existing numeric amounts are preserved without foreign-exchange conversion. Legacy tax fields remain available; this is not a Pakistan tax-filing integration.
+
+Pushes trigger only the Android APK build. Full CI/emulator checks are manual-only in Actions. Open **Backup & Restore** from the main menu to export a timestamped JSON backup or restore a saved one.

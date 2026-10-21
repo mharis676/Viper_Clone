@@ -569,7 +569,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div className="form-group">
               <label className="form-label">Payment Mode</label>
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                 {(["cash", "bank", "upi", "cheque"] as PaymentMode[]).map(
                   (mode) => (
                     <button
