@@ -24,6 +24,8 @@ export function Dialog({
       ].filter((el) => el.getClientRects().length);
     (controls()[0] || dialog).focus();
     const key = (e: KeyboardEvent) => {
+      const stack = document.querySelectorAll('.modal-card');
+      if (stack[stack.length - 1] !== dialog) return;
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();

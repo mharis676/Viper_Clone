@@ -35,7 +35,6 @@ import { PartiesView } from "./views/PartiesView.js";
 import { ItemsView } from "./views/ItemsView.js";
 import { SalesView } from "./views/SalesView.js";
 import { PurchasesView } from "./views/PurchasesView.js";
-import { PosView } from "./views/PosView.js";
 import { ExpensesView } from "./views/ExpensesView.js";
 import { CashBankView } from "./views/CashBankView.js";
 import { ReportsView } from "./views/ReportsView.js";
@@ -87,7 +86,6 @@ export const App: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [thermalPrint, setThermalPrint] = useState(false);
   const [printTargetTxn, setPrintTargetTxn] = useState<Transaction | null>(
     null,
   );
@@ -188,7 +186,7 @@ export const App: React.FC = () => {
     const createdTxn = await api.createTransaction(txnPayload);
     await loadData();
     if (thenPrint) {
-      setThermalPrint(false);
+
       setPrintTargetTxn(createdTxn);
       setIsPrintModalOpen(true);
     }
@@ -359,7 +357,6 @@ export const App: React.FC = () => {
           profile={profile}
           onOpenSaleModal={() => openNewInvoiceModal("sale")}
           onOpenPurchaseModal={() => openNewInvoiceModal("purchase")}
-          onOpenPOS={() => setActiveTab("pos")}
           onOpenSearch={() => setIsSearchModalOpen(true)}
           theme={theme}
           setTheme={setTheme}
@@ -387,13 +384,13 @@ export const App: React.FC = () => {
             stats={stats}
             onOpenSale={() => openNewInvoiceModal("sale")}
             onOpenPurchase={() => openNewInvoiceModal("purchase")}
-            onOpenPOS={() => setActiveTab("pos")}
-            onOpenItemModal={() => {
+            onOpenInvoices={() => setActiveTab("sales")}
+              onOpenItemModal={() => {
               setLowStockOnly(true);
               setActiveTab("items");
             }}
             onViewTransaction={(txn) => {
-              setThermalPrint(false);
+
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
@@ -436,7 +433,7 @@ export const App: React.FC = () => {
             transactions={transactions}
             onOpenSaleModal={openNewInvoiceModal}
             onViewTransaction={(txn) => {
-              setThermalPrint(false);
+
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
@@ -450,31 +447,13 @@ export const App: React.FC = () => {
             transactions={transactions}
             onOpenPurchaseModal={(type) => openNewInvoiceModal(type)}
             onViewTransaction={(txn) => {
-              setThermalPrint(false);
+
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
             onDeleteTransaction={handleDeleteTransaction}
           />
         )}
-
-        {
-          <div hidden={activeTab !== "pos"}>
-            <PosView
-              items={items}
-              parties={parties}
-              onCompleteCheckout={async (txnPayload, thenPrint) => {
-                const created = await api.createTransaction(txnPayload);
-                await loadData();
-                if (thenPrint) {
-                  setThermalPrint(true);
-                  setPrintTargetTxn(created);
-                  setIsPrintModalOpen(true);
-                }
-              }}
-            />
-          </div>
-        }
 
         {activeTab === "expenses" && (
           <ExpensesView
@@ -532,7 +511,7 @@ export const App: React.FC = () => {
           setActiveTab("items");
         }}
         onSelectTransaction={(txn) => {
-          setThermalPrint(false);
+
           setPrintTargetTxn(txn);
           setIsPrintModalOpen(true);
         }}
@@ -557,6 +536,8 @@ export const App: React.FC = () => {
           items={items}
           initialData={editingTransaction}
           transactions={transactions}
+          onCreateProduct={openAddItemModal}
+          onCreateParty={() => openAddPartyModal(invoiceType === "purchase" || invoiceType === "purchase_return" ? "supplier" : "customer")}
         />
       )}
 
@@ -580,11 +561,7 @@ export const App: React.FC = () => {
         onClose={() => setIsPrintModalOpen(false)}
         transaction={printTargetTxn}
         profile={profile}
-        printSettings={
-          thermalPrint
-            ? { ...printSettings, paperSize: "thermal_80mm" }
-            : printSettings
-        }
+        printSettings={printSettings}
       />
 
       <WhatsAppModal

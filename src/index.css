@@ -816,6 +816,12 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .modal-header,.modal-footer { flex-shrink: 0; gap: 10px; flex-wrap: wrap; }
 .modal-header > div { min-width: 0; }
 .modal-body { min-height: 0; overscroll-behavior: contain; }
+/* A flex-column modal must scroll its sections instead of crushing them to zero. */
+.modal-body > * { flex-shrink: 0; }
+.invoice-products { flex-shrink: 0; min-height: min-content; }
+.invoice-products-help { padding: 14px 16px; color: var(--text-secondary); font-size: 14px; }
+.invoice-products .card-header { gap: 10px; flex-wrap: wrap; }
+.invoice-products .data-table-wrapper { overflow-y: visible; }
 .modal-footer { padding: 12px 16px; }
 .modal-header h3 { overflow-wrap: anywhere; }
 .pos-container { height: auto; min-height: calc(100dvh - 100px - var(--safe-top) - var(--safe-bottom)); overflow: visible; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); }

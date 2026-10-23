@@ -28,6 +28,8 @@ interface InvoiceModalProps {
   items: Item[];
   initialData?: Transaction | null;
   transactions: Transaction[];
+  onCreateProduct: () => void;
+  onCreateParty: () => void;
 }
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({
@@ -39,6 +41,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   items,
   initialData,
   transactions,
+  onCreateProduct,
+  onCreateParty,
 }) => {
   const [partyId, setPartyId] = useState("");
   const [partyName, setPartyName] = useState("");
@@ -178,26 +182,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   };
 
   const addLineItem = () => {
-    const defaultItem = items[0];
     setLineItems((prev) => [
       ...prev,
-      calculateLine({
-        itemId: defaultItem?.id || "",
-        itemName: defaultItem?.name || "",
-        itemCode: defaultItem?.code || "",
-        hsnCode: defaultItem?.hsnCode || "",
-        quantity: 1,
-        unit: defaultItem?.unit || "Pcs",
-        price:
-          type === "purchase"
-            ? defaultItem?.purchasePrice || 0
-            : defaultItem?.salesPrice || 0,
-        discountPercent: 0,
-        discountAmount: 0,
-        taxRate: defaultItem?.taxRate ?? 0,
-        taxAmount: 0,
-        total: 0,
-      }),
+      calculateLine({ itemId: '', itemName: '', itemCode: '', hsnCode: '', quantity: 1,
+        unit: 'Pcs', price: 0, discountPercent: 0, discountAmount: 0, taxRate: 0, taxAmount: 0, total: 0 }),
     ]);
   };
 
@@ -221,7 +209,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       alert("Please select or specify a party");
       return;
     }
-    if (lineItems.length === 0 || !lineItems[0].itemId) {
+    if (lineItems.length === 0 || lineItems.some((line) => !line.itemId)) {
       alert("Please add at least one valid item");
       return;
     }
@@ -386,12 +374,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               value={partyId}
               onChange={handlePartyChange}
             >
+              <option value="" disabled>{supplier ? 'Select a supplier' : 'Select a customer'}</option>
               {parties.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.phone})
                 </option>
               ))}
             </select>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onCreateParty} disabled={isSaving}>
+              <Plus size={14} /> {supplier ? 'New Supplier' : 'New Customer'}
+            </button>
           </div>
 
           <div className="form-group">
@@ -427,9 +419,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
         {/* Line Items Table */}
         <div
-          className="card"
+          className="card invoice-products"
           style={{ border: "1px solid var(--border-color)" }}
         >
+          <div className="card-header">
+            <div className="card-title">Products in this bill</div>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onCreateProduct} disabled={isSaving}>
+              <Plus size={16} /> New Product
+            </button>
+          </div>
+          {items.length === 0 && <p className="invoice-products-help">Your product list is empty. Use New Product to create one without closing this bill.</p>}
           <div className="data-table-wrapper">
             <table className="data-table invoice-items-table">
               <thead>
@@ -451,9 +450,12 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     <td>
                       <select
                         className="form-select"
+                        aria-label={`Product ${idx + 1}`}
+                        autoFocus={idx > 0 && idx === lineItems.length - 1}
                         value={item.itemId}
                         onChange={(e) => handleItemSelect(idx, e.target.value)}
                       >
+                        <option value="" disabled>Select a product</option>
                         {items.map((i) => (
                           <option key={i.id} value={i.id}>
                             {i.name} (Stock: {i.currentStock})
@@ -467,6 +469,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                         min="0.001"
                         step="any"
                         className="form-input"
+                        aria-label={`Quantity ${idx + 1}`}
                         value={item.quantity}
                         onChange={(e) =>
                           handleLineChange(
@@ -483,6 +486,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                         min="0"
                         step="0.01"
                         className="form-input"
+                        aria-label={`Price ${idx + 1}`}
                         value={item.price}
                         onChange={(e) =>
                           handleLineChange(
@@ -555,9 +559,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           </div>
 
           <div style={{ padding: "10px 16px", background: "var(--bg-main)" }}>
-            <button className="btn btn-secondary btn-sm" onClick={addLineItem}>
+            <button type="button" className="btn btn-primary btn-sm" onClick={addLineItem} disabled={items.length === 0 || isSaving}>
               <Plus size={14} />
-              <span>+ Add Item Line</span>
+              <span>Add Product</span>
             </button>
           </div>
         </div>
@@ -587,13 +591,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Invoice Notes / Terms</label>
+              <label className="form-label">{type === "sale" ? "Order reference / delivery notes" : "Invoice Notes / Terms"}</label>
               <textarea
                 rows={2}
                 className="form-textarea"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Terms of delivery, payment bank details, warranty, etc."
+                placeholder="Order number, delivery address, delivery instructions or payment terms"
               />
             </div>
           </div>

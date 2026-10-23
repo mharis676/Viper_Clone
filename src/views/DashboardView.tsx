@@ -9,7 +9,7 @@ import {
   Package,
   AlertTriangle,
   Plus,
-  CreditCard,
+  FileText,
   Eye,
 } from 'lucide-react';
 import { DashboardStats, Transaction } from '../types.js';
@@ -18,7 +18,7 @@ interface DashboardViewProps {
   stats: DashboardStats | null;
   onOpenSale: () => void;
   onOpenPurchase: () => void;
-  onOpenPOS: () => void;
+  onOpenInvoices: () => void;
   onOpenItemModal: () => void;
   onViewTransaction: (txn: Transaction) => void;
 }
@@ -27,7 +27,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   stats,
   onOpenSale,
   onOpenPurchase,
-  onOpenPOS,
+  onOpenInvoices,
   onOpenItemModal,
   onViewTransaction,
 }) => {
@@ -47,13 +47,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="dashboard-actions">
-          <button className="btn btn-pos" onClick={onOpenPOS}>
-            <CreditCard size={16} />
-            <span>Open POS</span>
+          <button className="btn btn-secondary" onClick={onOpenInvoices}>
+            <FileText size={16} />
+            <span>Invoices</span>
           </button>
           <button className="btn btn-primary" onClick={onOpenSale}>
             <Plus size={16} />
-            <span>New Sale</span>
+            <span>New Invoice</span>
           </button>
           <button className="btn btn-secondary" onClick={onOpenPurchase}>
             <Plus size={16} />
@@ -125,7 +125,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="kpi-value">PKR {stats.cashInHand.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Store till cash</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Cash payments received</div>
         </div>
 
         <div className="kpi-card" style={{ '--card-accent': '#1976D2' } as React.CSSProperties}>
@@ -147,7 +147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="kpi-value">PKR {stats.totalSales.toLocaleString('en-PK', { maximumFractionDigits: 2 })}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Invoices & POS bills</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Online sales invoices</div>
         </div>
 
         <div className="kpi-card" style={{ '--card-accent': '#7B1FA2' } as React.CSSProperties}>

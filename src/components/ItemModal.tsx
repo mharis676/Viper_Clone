@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Barcode } from 'lucide-react';
+import { Dialog } from './Dialog.js';
 import { Item } from '../types.js';
 
 interface ItemModalProps {
@@ -28,9 +29,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [minStockAlert, setMinStockAlert] = useState<number>(5);
   const [currentStock, setCurrentStock] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
+      setError('');
       if (initialItem) {
         setName(initialItem.name);
         setCode(initialItem.code);
@@ -47,7 +50,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       } else {
         const rnd = Math.floor(100000 + Math.random() * 900000);
         setName('');
-        setCode(`ITM-${rnd.toString().slice(-4)}`);
+        setCode(`ITM-${crypto.randomUUID().slice(0, 12).toUpperCase()}`);
         setBarcode(`890103${rnd}`);
         setCategory('General');
         setUnit('Pcs');
@@ -71,6 +74,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setError('');
     if (!name.trim()) {
       alert('Please enter Item Name');
       return;
@@ -95,15 +100,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       });
       onClose();
     } catch (err: any) {
-      alert(`Error saving item: ${err.message}`);
+      setError(`Could not save product: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+<Dialog title={initialItem ? 'Edit Product Item' : 'Add New Item / Product'} onClose={() => { if (!isSaving) onClose(); }}>
         <form onSubmit={handleSubmit}>
           <div className="modal-header">
             <h3>{initialItem ? 'Edit Product Item' : 'Add New Item / Product'}</h3>
@@ -113,6 +117,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           </div>
 
           <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {error && <div role="alert" className="error-banner">{error}</div>}
             <div className="form-group">
               <label className="form-label">Item / Product Name *</label>
               <input
@@ -247,6 +252,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                 <input
                   type="number"
                   min="0"
+                  step="any"
                   className="form-input"
                   value={minStockAlert}
                   onChange={(e) => setMinStockAlert(parseFloat(e.target.value) || 0)}
@@ -259,6 +265,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
               <input
                 type="number"
                 min="0"
+                step="any"
                 className="form-input"
                 value={currentStock}
                 onChange={(e) => setCurrentStock(parseFloat(e.target.value) || 0)}
@@ -276,7 +283,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Dialog>
   );
 };

@@ -22,6 +22,22 @@ final class NativeTestSupport {
     static Context context() { return InstrumentationRegistry.getInstrumentation().getTargetContext(); }
     static void reset(boolean fixture) throws Exception {
         assertTrue("Delete only isolated emulator app database", context().getPackageName().equals("com.viper.business"));
+        // A cold headless emulator can show a System UI startup ANR. Recover that
+        // emulator process only; never dismiss an ANR belonging to Viper.
+        android.view.accessibility.AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+        if (root != null && !root.findAccessibilityNodeInfosByText("System UI").isEmpty()
+            && !root.findAccessibilityNodeInfosByText("responding").isEmpty()) {
+            java.util.List<android.view.accessibility.AccessibilityNodeInfo> close = root.findAccessibilityNodeInfosByText("Close app");
+            if (!close.isEmpty()) {
+                android.view.accessibility.AccessibilityNodeInfo control = close.get(0);
+                while (control != null && !control.isClickable()) control = control.getParent();
+                if (control != null) {
+                    System.err.println("Recovering the emulator System UI startup ANR before Viper acceptance");
+                    control.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK);
+                    SystemClock.sleep(1000);
+                }
+            }
+        }
         context().deleteDatabase("viper-business.sqlite");
         if (fixture) {
             String state;

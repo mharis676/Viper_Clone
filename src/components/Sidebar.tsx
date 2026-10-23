@@ -5,7 +5,6 @@ import {
   Package,
   ShoppingCart,
   ShoppingBag,
-  CreditCard,
   DollarSign,
   Landmark,
   FileBarChart,
@@ -21,7 +20,6 @@ export type ActiveTab =
   | 'items'
   | 'sales'
   | 'purchases'
-  | 'pos'
   | 'expenses'
   | 'cash-bank'
   | 'reports'
@@ -79,14 +77,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         >
           <ShoppingCart size={18} />
           <span>Sales & Invoices</span>
-        </button>
-
-        <button
-          className={`nav-item ${activeTab === 'pos' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pos')}
-        >
-          <CreditCard size={18} />
-          <span>Point of Sale (POS)</span>
         </button>
 
         <div className="nav-section-label">Purchases & Expenses</div>

@@ -43,10 +43,10 @@ export const SalesView: React.FC<SalesViewProps> = ({
         <div>
           <h2 className="page-title">
             <ShoppingCart size={24} color="var(--primary)" />
-            <span>Sales & Outbound Transactions</span>
+            <span>Online Sales & Invoices</span>
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            GST Tax invoices, quotations, customer payment receipts, and credit notes
+            Create customer invoices for online orders, record payments, and manage quotations and returns.
           </p>
         </div>
 

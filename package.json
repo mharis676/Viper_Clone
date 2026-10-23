@@ -1,7 +1,7 @@
 {
   "name": "vyapar-app",
   "version": "1.0.0",
-  "description": "Vyapar App Full-Stack Clone - Business Accounting, GST Invoicing, Inventory & POS",
+  "description": "Viper - Customer Invoicing, Inventory and Accounting",
   "private": true,
   "type": "module",
   "scripts": {

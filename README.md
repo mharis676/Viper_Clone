@@ -1,6 +1,6 @@
 # Viper Business App
 
-React/TypeScript invoicing, POS, inventory, parties, cash/bank, expenses and reports, with mobile-only Android storage in app-private SQLite. Currency is PKR across screens, invoices and exports. An optional Express/JSON backend supports web development. Includes a Capacitor Android project and GitHub Actions APK workflow.
+React/TypeScript online-order invoicing, inventory, parties, cash/bank, expenses and reports, with mobile-only Android storage in app-private SQLite. Currency is PKR across screens, invoices and exports. An optional Express/JSON backend supports web development. Includes a Capacitor Android project and GitHub Actions APK workflow.
 
 ## Local development
 
@@ -33,7 +33,7 @@ Android works without a server or internet. A new install starts empty and opens
 - The shared accounting engine calculates discounts, amounts, CGST/SGST or explicit interstate IGST. Client totals are previews.
 - Stock and financial updates commit together with reversible effects. Returns reference an original invoice and cannot exceed its quantities.
 - Payments allocate to a selected invoice or oldest outstanding invoices. Remove linked payments/returns before deleting the original invoice.
-- POS supports held bills, walk-in cash sales, named-customer credit and split tender. Draft bills survive navigation and same-session reloads.
+- Create online sales bills from New Invoice: select the customer and products, enter quantities and payment details, and include the order reference or delivery instructions. Existing sales records remain available.
 - Reports use net sales and configured unit purchase cost captured at sale time; returns reverse that cost. This method is not FIFO or weighted average.
 - Valid restores preserve a pre-restore copy. Invalid/unreadable stores fail instead of being replaced with demo data. Keep independent backups and review legacy records before upgrading.
 

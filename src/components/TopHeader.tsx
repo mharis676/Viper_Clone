@@ -4,7 +4,6 @@ import {
   Plus,
   Moon,
   Sun,
-  CreditCard,
   Building2,
   Sparkles,
 } from 'lucide-react';
@@ -14,7 +13,6 @@ interface TopHeaderProps {
   profile: BusinessProfile | null;
   onOpenSaleModal: () => void;
   onOpenPurchaseModal: () => void;
-  onOpenPOS: () => void;
   onOpenSearch: () => void;
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
@@ -24,7 +22,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   profile,
   onOpenSaleModal,
   onOpenPurchaseModal,
-  onOpenPOS,
   onOpenSearch,
   theme,
   setTheme,
@@ -47,16 +44,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         e.preventDefault();
         onOpenPurchaseModal();
       }
-      // F2 -> POS Counter
-      if (e.key === 'F2') {
-        e.preventDefault();
-        onOpenPOS();
-      }
+
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onOpenSearch, onOpenSaleModal, onOpenPurchaseModal, onOpenPOS]);
+  }, [onOpenSearch, onOpenSaleModal, onOpenPurchaseModal]);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
@@ -83,15 +76,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       </div>
 
       <div className="header-right">
-        <button className="btn btn-pos" onClick={onOpenPOS} title="Open Point of Sale Counter (F2)">
-          <CreditCard size={16} />
-          <span>POS Counter</span>
-          <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: 2 }}>(F2)</span>
-        </button>
-
         <button className="btn btn-primary" onClick={onOpenSaleModal} title="Add Sale Invoice (Alt+S)">
           <Plus size={16} />
-          <span>+ Sale</span>
+          <span>New Invoice</span>
           <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: 2 }}>(Alt+S)</span>
         </button>
 

@@ -26,7 +26,7 @@
       "gstin": "29AAACH7409R1ZX",
       "billingAddress": "Shop 12, Market Road, Bengaluru",
       "openingBalance": 15400,
-      "currentBalance": 25161,
+      "currentBalance": 25513.82,
       "creditLimit": 50000,
       "createdAt": "2026-10-20T14:41:10.074Z"
     },
@@ -105,7 +105,7 @@
       "openingBalance": 1200,
       "creditLimit": 25000,
       "id": "party-1792508135097-311",
-      "currentBalance": 1200,
+      "currentBalance": 2085,
       "createdAt": "2026-10-20T14:55:35.097Z"
     },
     {
@@ -149,7 +149,7 @@
       "taxRate": 18,
       "hsnCode": "847160",
       "minStockAlert": 10,
-      "currentStock": 35,
+      "currentStock": 33,
       "godownId": "godown-1",
       "createdAt": "2026-10-20T14:41:10.075Z"
     },
@@ -183,7 +183,7 @@
       "taxRate": 18,
       "hsnCode": "854442",
       "minStockAlert": 20,
-      "currentStock": 81,
+      "currentStock": 79,
       "godownId": "godown-1",
       "createdAt": "2026-10-20T14:41:10.075Z"
     },
@@ -217,7 +217,7 @@
       "taxRate": 18,
       "hsnCode": "847170",
       "minStockAlert": 5,
-      "currentStock": 12,
+      "currentStock": 11,
       "godownId": "godown-1",
       "createdAt": "2026-10-20T14:41:10.075Z"
     },
@@ -232,7 +232,7 @@
       "mrp": 2499,
       "taxRate": 18,
       "minStockAlert": 5,
-      "currentStock": 20,
+      "currentStock": 19,
       "godownId": "godown-1",
       "id": "item-1792507270146-230",
       "createdAt": "2026-10-20T14:41:10.146Z"
@@ -335,6 +335,220 @@
   ],
   "transactions": [
     {
+      "invoiceNumber": "INV-b81cf764-bb1",
+      "type": "sale",
+      "partyId": "party-1792508135097-311",
+      "partyName": "Test Retail Customer",
+      "date": "2026-10-23",
+      "dueDate": "2026-11-07",
+      "notes": "Thank you for your business!",
+      "interstate": false,
+      "items": [
+        {
+          "itemId": "item-1",
+          "itemName": "Wireless Bluetooth Optical Mouse",
+          "itemCode": "ITM-101",
+          "hsnCode": "847160",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 750,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 135,
+          "total": 885,
+          "costPrice": 420
+        }
+      ],
+      "subtotal": 750,
+      "discountTotal": 0,
+      "taxTotal": 135,
+      "cgst": 67.5,
+      "sgst": 67.5,
+      "igst": 0,
+      "total": 885,
+      "paidAmount": 0,
+      "initialPaidAmount": 0,
+      "balanceDue": 885,
+      "paymentMode": "cash",
+      "status": "unpaid",
+      "id": "txn-842c6184-f12f-4098-9a1d-69a5fbffb8c6",
+      "createdAt": "2026-10-23T06:27:30.591Z",
+      "effects": {
+        "party": 885,
+        "cash": 0,
+        "accountId": "acc-1",
+        "stock": [
+          {
+            "itemId": "item-1",
+            "delta": -1
+          }
+        ]
+      },
+      "creditedAmount": 0
+    },
+    {
+      "invoiceNumber": "INV-7a5e72c3-247",
+      "type": "sale",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "date": "2026-10-23",
+      "dueDate": "2026-11-07",
+      "notes": "Thank you for your business!",
+      "interstate": false,
+      "items": [
+        {
+          "itemId": "item-3",
+          "itemName": "Fast Charging USB-C Braided Cable 2M",
+          "itemCode": "ITM-103",
+          "hsnCode": "854442",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 299,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 53.82,
+          "total": 352.82,
+          "costPrice": 95
+        }
+      ],
+      "subtotal": 299,
+      "discountTotal": 0,
+      "taxTotal": 53.82,
+      "cgst": 26.91,
+      "sgst": 26.91,
+      "igst": 0,
+      "total": 352.82,
+      "paidAmount": 0,
+      "initialPaidAmount": 0,
+      "balanceDue": 352.82,
+      "paymentMode": "cash",
+      "status": "unpaid",
+      "id": "txn-46bbdcf7-a5aa-4e3f-95b5-16d1fe4379c5",
+      "createdAt": "2026-10-23T06:23:05.559Z",
+      "effects": {
+        "party": 352.82,
+        "cash": 0,
+        "accountId": "acc-1",
+        "stock": [
+          {
+            "itemId": "item-3",
+            "delta": -1
+          }
+        ]
+      },
+      "creditedAmount": 0
+    },
+    {
+      "invoiceNumber": "POS-67bd42d2-aaa",
+      "type": "sale",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "date": "2026-10-23",
+      "notes": "POS Quick Sale Checkout (CASH)",
+      "interstate": false,
+      "items": [
+        {
+          "itemId": "item-1",
+          "itemName": "Wireless Bluetooth Optical Mouse",
+          "itemCode": "ITM-101",
+          "hsnCode": "847160",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 750,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 135,
+          "total": 885,
+          "costPrice": 420
+        },
+        {
+          "itemId": "item-3",
+          "itemName": "Fast Charging USB-C Braided Cable 2M",
+          "itemCode": "ITM-103",
+          "hsnCode": "854442",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 299,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 53.82,
+          "total": 352.82,
+          "costPrice": 95
+        },
+        {
+          "itemId": "item-1792507270146-230",
+          "itemName": "Wireless Ergonomic Keyboard",
+          "itemCode": "TEST-KB-01",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 1999,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 359.82,
+          "total": 2358.82,
+          "costPrice": 1200
+        },
+        {
+          "itemId": "item-5",
+          "itemName": "Portable USB 3.0 External SSD 1TB",
+          "itemCode": "ITM-105",
+          "hsnCode": "847170",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 6999,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 1259.82,
+          "total": 8258.82,
+          "costPrice": 4800
+        }
+      ],
+      "subtotal": 10047,
+      "discountTotal": 0,
+      "taxTotal": 1808.46,
+      "cgst": 904.23,
+      "sgst": 904.23,
+      "igst": 0,
+      "total": 11855.46,
+      "paidAmount": 11855.46,
+      "initialPaidAmount": 11855.46,
+      "balanceDue": 0,
+      "paymentMode": "cash",
+      "status": "paid",
+      "id": "txn-7ee5db41-26e2-4c9a-a7d7-fe4ed7c7c5c8",
+      "createdAt": "2026-10-23T06:15:47.616Z",
+      "effects": {
+        "party": 0,
+        "cash": 11855.46,
+        "accountId": "acc-1",
+        "stock": [
+          {
+            "itemId": "item-1",
+            "delta": -1
+          },
+          {
+            "itemId": "item-3",
+            "delta": -1
+          },
+          {
+            "itemId": "item-1792507270146-230",
+            "delta": -1
+          },
+          {
+            "itemId": "item-5",
+            "delta": -1
+          }
+        ]
+      },
+      "creditedAmount": 0
+    },
+    {
       "invoiceNumber": "INV-TEST-1792508180170",
       "type": "sale",
       "partyId": "party-1",
@@ -368,7 +582,9 @@
       "status": "unpaid",
       "notes": "Automated test invoice",
       "id": "txn-1792508180176-457",
-      "createdAt": "2026-10-20T14:56:20.176Z"
+      "createdAt": "2026-10-20T14:56:20.176Z",
+      "initialPaidAmount": 0,
+      "creditedAmount": 0
     },
     {
       "invoiceNumber": "INV-TEST-1792508164586",
@@ -404,7 +620,9 @@
       "status": "unpaid",
       "notes": "Automated test invoice",
       "id": "txn-1792508164590-311",
-      "createdAt": "2026-10-20T14:56:04.590Z"
+      "createdAt": "2026-10-20T14:56:04.590Z",
+      "initialPaidAmount": 0,
+      "creditedAmount": 0
     },
     {
       "invoiceNumber": "INV-TEST-1792508135137",
@@ -440,7 +658,9 @@
       "status": "unpaid",
       "notes": "Automated test invoice",
       "id": "txn-1792508135143-678",
-      "createdAt": "2026-10-20T14:55:35.143Z"
+      "createdAt": "2026-10-20T14:55:35.143Z",
+      "initialPaidAmount": 0,
+      "creditedAmount": 0
     },
     {
       "invoiceNumber": "INV-LEDGER-1792508056439",
@@ -476,7 +696,9 @@
       "status": "partial",
       "notes": "Partial payment test",
       "id": "txn-1792508056443-177",
-      "createdAt": "2026-10-20T14:54:16.443Z"
+      "createdAt": "2026-10-20T14:54:16.443Z",
+      "initialPaidAmount": 500,
+      "creditedAmount": 0
     },
     {
       "invoiceNumber": "INV-TEST-1792508017220",
@@ -512,7 +734,9 @@
       "status": "unpaid",
       "notes": "Automated test invoice",
       "id": "txn-1792508017224-754",
-      "createdAt": "2026-10-20T14:53:37.224Z"
+      "createdAt": "2026-10-20T14:53:37.224Z",
+      "initialPaidAmount": 0,
+      "creditedAmount": 0
     },
     {
       "invoiceNumber": "INV-TEST-1792507270164",
@@ -548,7 +772,9 @@
       "status": "unpaid",
       "notes": "Automated test invoice",
       "id": "txn-1792507270167-165",
-      "createdAt": "2026-10-20T14:41:10.167Z"
+      "createdAt": "2026-10-20T14:41:10.167Z",
+      "initialPaidAmount": 0,
+      "creditedAmount": 0
     },
     {
       "id": "txn-1",
@@ -600,7 +826,9 @@
       "paymentMode": "bank",
       "status": "partial",
       "notes": "Delivered via Express Cargo. Thank you for your business!",
-      "createdAt": "2026-10-17T14:41:10.075Z"
+      "createdAt": "2026-10-17T14:41:10.075Z",
+      "initialPaidAmount": 10000,
+      "creditedAmount": 0
     }
   ],
   "expenses": [
@@ -673,7 +901,7 @@
       "id": "acc-1",
       "name": "Cash in Hand (Store Till)",
       "type": "cash",
-      "balance": 15500,
+      "balance": 27355.46,
       "isDefault": true
     },
     {
@@ -707,7 +935,7 @@
       "invoiceNumber": "INV-2026-001",
       "type": "debit",
       "amount": 17228,
-      "runningBalance": 22628,
+      "runningBalance": 32628,
       "description": "Sale Invoice #INV-2026-001"
     },
     {
@@ -719,7 +947,7 @@
       "invoiceNumber": "INV-2026-001",
       "type": "credit",
       "amount": 10000,
-      "runningBalance": 12628,
+      "runningBalance": 22628,
       "description": "Part Payment received via Bank for INV-2026-001"
     },
     {
@@ -731,7 +959,7 @@
       "invoiceNumber": "INV-TEST-1792507270164",
       "type": "debit",
       "amount": 1770,
-      "runningBalance": 17170,
+      "runningBalance": 24398,
       "description": "Sale Invoice #INV-TEST-1792507270164"
     },
     {
@@ -743,7 +971,7 @@
       "invoiceNumber": "INV-TEST-1792508017220",
       "type": "debit",
       "amount": 1770,
-      "runningBalance": 18940,
+      "runningBalance": 26168,
       "description": "Sale Invoice #INV-TEST-1792508017220"
     },
     {
@@ -755,7 +983,7 @@
       "invoiceNumber": "INV-LEDGER-1792508056439",
       "type": "debit",
       "amount": 1411,
-      "runningBalance": 19851,
+      "runningBalance": 27579,
       "description": "Sale Invoice #INV-LEDGER-1792508056439"
     },
     {
@@ -767,7 +995,7 @@
       "invoiceNumber": "INV-LEDGER-1792508056439",
       "type": "credit",
       "amount": 500,
-      "runningBalance": 19851,
+      "runningBalance": 27079,
       "description": "Payment received for #INV-LEDGER-1792508056439"
     },
     {
@@ -779,7 +1007,7 @@
       "invoiceNumber": "INV-TEST-1792508135137",
       "type": "debit",
       "amount": 1770,
-      "runningBalance": 21621,
+      "runningBalance": 28849,
       "description": "Sale Invoice #INV-TEST-1792508135137"
     },
     {
@@ -791,7 +1019,7 @@
       "invoiceNumber": "INV-TEST-1792508164586",
       "type": "debit",
       "amount": 1770,
-      "runningBalance": 23391,
+      "runningBalance": 30619,
       "description": "Sale Invoice #INV-TEST-1792508164586"
     },
     {
@@ -803,8 +1031,56 @@
       "invoiceNumber": "INV-TEST-1792508180170",
       "type": "debit",
       "amount": 1770,
-      "runningBalance": 25161,
+      "runningBalance": 32389,
       "description": "Sale Invoice #INV-TEST-1792508180170"
+    },
+    {
+      "id": "led-f76740bb-8c1f-4107-830d-80f13b64b168",
+      "date": "2026-10-23",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "transactionId": "txn-7ee5db41-26e2-4c9a-a7d7-fe4ed7c7c5c8",
+      "invoiceNumber": "POS-67bd42d2-aaa",
+      "type": "debit",
+      "amount": 11855.46,
+      "runningBalance": 44244.46,
+      "description": "sale"
+    },
+    {
+      "id": "led-301ec28b-8e86-4fab-a487-d39dbda21b3e",
+      "date": "2026-10-23",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "transactionId": "txn-7ee5db41-26e2-4c9a-a7d7-fe4ed7c7c5c8",
+      "invoiceNumber": "POS-67bd42d2-aaa",
+      "type": "credit",
+      "amount": 11855.46,
+      "runningBalance": 32389,
+      "description": "Payment / refund"
+    },
+    {
+      "id": "led-a0a69fc2-f2ee-4f78-9c20-235d49e41ebd",
+      "date": "2026-10-23",
+      "partyId": "party-1",
+      "partyName": "Sharma General Stores",
+      "transactionId": "txn-46bbdcf7-a5aa-4e3f-95b5-16d1fe4379c5",
+      "invoiceNumber": "INV-7a5e72c3-247",
+      "type": "debit",
+      "amount": 352.82,
+      "runningBalance": 32741.82,
+      "description": "sale"
+    },
+    {
+      "id": "led-1d5a8709-e0f5-40c4-87b5-a19be8890c34",
+      "date": "2026-10-23",
+      "partyId": "party-1792508135097-311",
+      "partyName": "Test Retail Customer",
+      "transactionId": "txn-842c6184-f12f-4098-9a1d-69a5fbffb8c6",
+      "invoiceNumber": "INV-b81cf764-bb1",
+      "type": "debit",
+      "amount": 885,
+      "runningBalance": 2085,
+      "description": "sale"
     }
   ],
   "printSettings": {
