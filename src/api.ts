@@ -11,6 +11,9 @@ import {
   DashboardStats,
   ProfitAndLossReport,
   GstReport,
+  PartyStatementResult,
+  ChangeHistoryEntry,
+  BackupMetadata,
 } from "./types.js";
 
 import { Capacitor } from "@capacitor/core";
@@ -73,6 +76,13 @@ export const api = {
     request<{ success: boolean }>(`/parties/${id}`, { method: "DELETE" }),
   getPartyLedger: (id: string) =>
     request<LedgerEntry[]>(`/parties/${id}/ledger`),
+  getPartyStatement: (id: string, startDate?: string, endDate?: string) => {
+    const q = new URLSearchParams();
+    if (startDate) q.set("startDate", startDate);
+    if (endDate) q.set("endDate", endDate);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return request<PartyStatementResult>(`/parties/${id}/statement${qs}`);
+  },
 
   // Items
   getItems: () => request<Item[]>("/items"),
@@ -105,6 +115,11 @@ export const api = {
     request<Transaction>("/transactions", {
       method: "POST",
       body: JSON.stringify(txn),
+    }),
+  updateTransaction: (id: string, updates: Partial<Transaction>) =>
+    request<Transaction>(`/transactions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
     }),
   deleteTransaction: (id: string) =>
     request<{ success: boolean }>(`/transactions/${id}`, { method: "DELETE" }),
@@ -145,8 +160,30 @@ export const api = {
     }),
 
   // Reports
-  getProfitAndLoss: () => request<ProfitAndLossReport>("/reports/pnl"),
-  getGstReport: () => request<GstReport>("/reports/gst"),
+  getProfitAndLoss: (startDate?: string, endDate?: string) => {
+    const q = new URLSearchParams();
+    if (startDate) q.set("startDate", startDate);
+    if (endDate) q.set("endDate", endDate);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return request<ProfitAndLossReport>(`/reports/pnl${qs}`);
+  },
+  getGstReport: (startDate?: string, endDate?: string) => {
+    const q = new URLSearchParams();
+    if (startDate) q.set("startDate", startDate);
+    if (endDate) q.set("endDate", endDate);
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return request<GstReport>(`/reports/gst${qs}`);
+  },
+
+  // Change History (Audit Trail)
+  getChangeHistory: (params?: { entityType?: string; entityId?: string; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.entityType) q.set("entityType", params.entityType);
+    if (params?.entityId) q.set("entityId", params.entityId);
+    if (params?.limit) q.set("limit", String(params.limit));
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    return request<ChangeHistoryEntry[]>(`/history${qs}`);
+  },
 
   // Settings
   getPrintSettings: () => request<PrintSettings>("/settings/print"),
@@ -160,8 +197,9 @@ export const api = {
   exportBackupUrl: () => `${apiBase()}/backup`,
   downloadBackup: async () => {
     const backup = await request<unknown>("/backup");
+    const filename = `viper-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
     await exportFile(
-      `viper-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+      filename,
       JSON.stringify(backup, null, 2),
       "application/json",
     );
@@ -170,5 +208,11 @@ export const api = {
     request<{ success: boolean }>("/backup/restore", {
       method: "POST",
       body: JSON.stringify(backupData),
+    }),
+  getLastBackupMetadata: () => request<BackupMetadata>("/backup/last"),
+  setLastBackupMetadata: (meta: BackupMetadata) =>
+    request<BackupMetadata>("/backup/last", {
+      method: "POST",
+      body: JSON.stringify(meta),
     }),
 };

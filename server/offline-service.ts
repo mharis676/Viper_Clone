@@ -36,13 +36,15 @@ function dispatch(db: BusinessEngine, endpoint: string, method: string, body: an
     if (resource === 'health') return { status:'ok', service:'vyapar-api', storage:'offline-sqlite' };
     if (resource === 'dashboard') return db.getDashboardStats();
     if (resource === 'profile') return db.getProfile();
-    if (resource === 'parties') return action === 'ledger' ? db.getPartyLedger(key) : key ? found(db.getPartyById(key)) : db.getParties(url.searchParams.get('type') || undefined);
+    if (resource === 'parties') return action === 'statement' ? db.getPartyStatement(key, url.searchParams.get('startDate') || undefined, url.searchParams.get('endDate') || undefined) : action === 'ledger' ? db.getPartyLedger(key) : key ? found(db.getPartyById(key)) : db.getParties(url.searchParams.get('type') || undefined);
     if (resource === 'items') return key === 'barcode' ? found(db.getItemByBarcode(decodeURIComponent(action))) : key ? found(db.getItemById(key)) : db.getItems();
     if (resource === 'transactions') return key ? found(db.getTransactionById(key)) : db.getTransactions(url.searchParams.get('type') || undefined);
     if (resource === 'expenses') return key === 'categories' ? db.getExpenseCategories() : db.getExpenses();
     if (resource === 'accounts') return db.getAccounts();
-    if (resource === 'reports') return key === 'pnl' ? db.getProfitAndLoss() : db.getGstReport();
+    if (resource === 'reports') return key === 'pnl' ? db.getProfitAndLoss(url.searchParams.get('startDate') || undefined, url.searchParams.get('endDate') || undefined) : db.getGstReport(url.searchParams.get('startDate') || undefined, url.searchParams.get('endDate') || undefined);
+    if (resource === 'history') return db.getChangeHistory({ entityType: url.searchParams.get('entityType') || undefined, entityId: url.searchParams.get('entityId') || undefined, limit: url.searchParams.get('limit') ? Number(url.searchParams.get('limit')) : undefined });
     if (resource === 'settings') return db.getPrintSettings();
+    if (resource === 'backup' && key === 'last') return db.getBackupMetadata();
     if (resource === 'backup') return db.exportBackup();
   }
   if (method === 'POST') {
@@ -52,11 +54,13 @@ function dispatch(db: BusinessEngine, endpoint: string, method: string, body: an
     if (resource === 'expenses') return key === 'categories' ? db.createExpenseCategory(body) : db.createExpense(body);
     if (resource === 'accounts') return key === 'transfer' ? {success:db.transferFunds(body.fromAccountId,body.toAccountId,body.amount,body.notes)} : db.createAccount(body);
     if (resource === 'backup' && key === 'restore') return {success:db.restoreBackup(body)};
+    if (resource === 'backup' && key === 'last') return db.setBackupMetadata(body);
   }
   if (method === 'PUT') {
     if (resource === 'profile') return db.updateProfile(body);
     if (resource === 'parties') return found(db.updateParty(key,body));
     if (resource === 'items') return found(db.updateItem(key,body));
+    if (resource === 'transactions') return found(db.updateTransaction(key,body));
     if (resource === 'settings') return db.updatePrintSettings(body);
   }
   if (method === 'DELETE') {

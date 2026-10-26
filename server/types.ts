@@ -94,7 +94,7 @@ export interface Transaction {
   originalTransactionId?: string;
   initialPaidAmount?: number;
   creditedAmount?: number;
-  allocations?: { invoiceId: string; amount: number }[];
+  allocations?: { invoiceId: string; invoiceNumber?: string; amount: number }[];
   effects?: { party: number; accountId?: string; accountPostings?: { accountId: string; amount: number }[]; cash: number; stock: { itemId: string; delta: number }[] };
   id: string;
   invoiceNumber: string;
@@ -182,4 +182,48 @@ export interface DashboardStats {
   stockValue: number;
   lowStockItemsCount: number;
   recentTransactions: Transaction[];
+}
+
+export interface ChangeHistoryEntry {
+  id: string;
+  timestamp: string;
+  entityType: 'invoice' | 'payment' | 'opening_balance' | 'party' | 'item';
+  entityId: string;
+  entityNumber?: string;
+  action: 'created' | 'updated' | 'deleted';
+  summary: string;
+  changes?: {
+    field: string;
+    oldValue: any;
+    newValue: any;
+  }[];
+}
+
+export interface PartyStatementResult {
+  party: Party;
+  startDate?: string;
+  endDate?: string;
+  openingBalance: number;
+  openingBalanceType: 'Dr' | 'Cr' | 'Settled';
+  openingBalanceLabel: 'To Receive' | 'To Pay' | 'Settled';
+  entries: (LedgerEntry & {
+    balanceType: 'Dr' | 'Cr' | 'Settled';
+    balanceLabel: 'To Receive' | 'To Pay' | 'Settled';
+  })[];
+  totalDebits: number;
+  totalCredits: number;
+  closingBalance: number;
+  closingBalanceType: 'Dr' | 'Cr' | 'Settled';
+  closingBalanceLabel: 'To Receive' | 'To Pay' | 'Settled';
+}
+
+export interface BackupMetadata {
+  lastBackupAt?: string;
+  lastBackupName?: string;
+  recordsCount?: {
+    parties: number;
+    items: number;
+    transactions: number;
+    expenses: number;
+  };
 }

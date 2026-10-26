@@ -9,6 +9,9 @@ import type {
   BusinessProfile,
   PrintSettings,
   LedgerEntry,
+  ChangeHistoryEntry,
+  PartyStatementResult,
+  BackupMetadata,
 } from "./types.js";
 import { calculateLine, calculateTotals, money } from "./calculations.js";
 
@@ -39,7 +42,25 @@ type Effects = {
 
 export class BusinessEngine {
   protected db: DatabaseSchema;
-  constructor(initial: DatabaseSchema) { this.db = this.validateBackup(initial); }
+  constructor(initial: DatabaseSchema) {
+    this.db = this.validateBackup(initial);
+    this.db.changeHistory = this.db.changeHistory || [];
+  }
+  logChange(entry: Omit<ChangeHistoryEntry, "id" | "timestamp">) {
+    this.db.changeHistory = this.db.changeHistory || [];
+    this.db.changeHistory.unshift({
+      ...entry,
+      id: id("hist"),
+      timestamp: new Date().toISOString(),
+    });
+  }
+  getChangeHistory(filter?: { entityType?: string; entityId?: string; limit?: number }) {
+    let list = this.db.changeHistory || [];
+    if (filter?.entityType) list = list.filter((h) => h.entityType === filter.entityType);
+    if (filter?.entityId) list = list.filter((h) => h.entityId === filter.entityId);
+    if (filter?.limit && filter.limit > 0) list = list.slice(0, filter.limit);
+    return structuredClone(list);
+  }
   protected commit<T>(change: () => T, _preservePrevious = false): T {
     const before = structuredClone(this.db);
     try { const result = change(); return structuredClone(result); }
@@ -109,6 +130,7 @@ export class BusinessEngine {
     return this.commit(() => {
       const p = this.db.parties.find((p) => p.id === key);
       if (!p) return undefined;
+      const prevOpening = p.openingBalance;
       const next = {
         ...p,
         ...updates,
@@ -123,6 +145,24 @@ export class BusinessEngine {
       this.partyInput(next);
       Object.assign(p, next);
       this.rebuildLedger(key);
+      if (updates.openingBalance !== undefined && updates.openingBalance !== prevOpening) {
+        this.logChange({
+          entityType: "opening_balance",
+          entityId: p.id,
+          entityNumber: p.name,
+          action: "updated",
+          summary: `Opening balance for ${p.name} updated from PKR ${prevOpening} to PKR ${updates.openingBalance}`,
+          changes: [{ field: "openingBalance", oldValue: prevOpening, newValue: updates.openingBalance }],
+        });
+      } else {
+        this.logChange({
+          entityType: "party",
+          entityId: p.id,
+          entityNumber: p.name,
+          action: "updated",
+          summary: `Party ${p.name} details updated`,
+        });
+      }
       return p;
     });
   }
@@ -390,20 +430,59 @@ export class BusinessEngine {
       (t) => t.type === "payment_in" || t.type === "payment_out",
     )) {
       let available = payment.initialPaidAmount ?? payment.paidAmount;
-      payment.allocations = [];
-      for (const invoice of ordered.filter(
-        (t) =>
-          t.partyId === payment.partyId &&
-          t.type === (payment.type === "payment_in" ? "sale" : "purchase") &&
-          (!payment.originalTransactionId ||
-            t.id === payment.originalTransactionId),
-      )) {
-        const amount = money(Math.min(available, invoice.balanceDue));
-        if (amount > 0) {
-          invoice.paidAmount = money(invoice.paidAmount + amount);
-          invoice.balanceDue = money(invoice.balanceDue - amount);
-          available = money(available - amount);
-          payment.allocations.push({ invoiceId: invoice.id, amount });
+      const targetType = payment.type === "payment_in" ? "sale" : "purchase";
+
+      // If explicit allocations were designated by user:
+      if (payment.allocations && payment.allocations.length > 0) {
+        const designated = [...payment.allocations];
+        payment.allocations = [];
+        for (const alloc of designated) {
+          const inv = ordered.find(
+            (t) =>
+              t.id === alloc.invoiceId &&
+              t.partyId === payment.partyId &&
+              t.type === targetType,
+          );
+          if (inv && inv.balanceDue > 0 && available > 0) {
+            const amount = money(
+              Math.min(available, Math.min(alloc.amount, inv.balanceDue)),
+            );
+            if (amount > 0) {
+              inv.paidAmount = money(inv.paidAmount + amount);
+              inv.balanceDue = money(inv.balanceDue - amount);
+              available = money(available - amount);
+              payment.allocations.push({
+                invoiceId: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                amount,
+              });
+            }
+          }
+        }
+      } else {
+        payment.allocations = [];
+      }
+
+      // If available balance remains, allocate by originalTransactionId or FIFO
+      if (available > 0) {
+        for (const invoice of ordered.filter(
+          (t) =>
+            t.partyId === payment.partyId &&
+            t.type === targetType &&
+            (!payment.originalTransactionId ||
+              t.id === payment.originalTransactionId),
+        )) {
+          const amount = money(Math.min(available, invoice.balanceDue));
+          if (amount > 0) {
+            invoice.paidAmount = money(invoice.paidAmount + amount);
+            invoice.balanceDue = money(invoice.balanceDue - amount);
+            available = money(available - amount);
+            payment.allocations.push({
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              amount,
+            });
+          }
         }
       }
     }
@@ -551,6 +630,7 @@ export class BusinessEngine {
       const balanceDue = payment ? 0 : money(totals.total - paid);
       const t: Transaction = {
         payments,
+        allocations: input.allocations,
         invoiceNumber,
         type: input.type,
         partyId: walkIn ? "walk-in" : party!.id,
@@ -582,6 +662,44 @@ export class BusinessEngine {
       this.db.transactions.unshift(t);
       this.postLedger(t);
       this.settleInvoices();
+      const isPay = t.type === "payment_in" || t.type === "payment_out";
+      this.logChange({
+        entityType: isPay ? "payment" : "invoice",
+        entityId: t.id,
+        entityNumber: t.invoiceNumber,
+        action: "created",
+        summary: `${isPay ? (t.type === "payment_in" ? "Payment received" : "Payment sent") : "Invoice"} ${t.invoiceNumber} recorded for PKR ${t.total} (${t.partyName})`,
+      });
+      return t;
+    });
+  }
+  updateTransaction(key: string, updates: Partial<Transaction>) {
+    return this.commit(() => {
+      const t = this.db.transactions.find((t) => t.id === key);
+      if (!t) return undefined;
+      const changes: { field: string; oldValue: any; newValue: any }[] = [];
+      if (updates.notes !== undefined && updates.notes !== t.notes) {
+        changes.push({ field: "notes", oldValue: t.notes, newValue: updates.notes });
+        t.notes = updates.notes;
+      }
+      if (updates.dueDate !== undefined && updates.dueDate !== t.dueDate) {
+        changes.push({ field: "dueDate", oldValue: t.dueDate, newValue: updates.dueDate });
+        t.dueDate = updates.dueDate;
+      }
+      if (updates.allocations !== undefined) {
+        changes.push({ field: "allocations", oldValue: t.allocations, newValue: updates.allocations });
+        t.allocations = updates.allocations;
+        this.settleInvoices();
+      }
+      const isPay = t.type === "payment_in" || t.type === "payment_out";
+      this.logChange({
+        entityType: isPay ? "payment" : "invoice",
+        entityId: t.id,
+        entityNumber: t.invoiceNumber,
+        action: "updated",
+        summary: `${t.type.replace("_", " ")} ${t.invoiceNumber} updated`,
+        changes,
+      });
       return t;
     });
   }
@@ -602,6 +720,14 @@ export class BusinessEngine {
       this.db.ledgers = this.db.ledgers.filter((l) => l.transactionId !== key);
       this.rebuildLedger(t.partyId);
       this.settleInvoices();
+      const isPay = t.type === "payment_in" || t.type === "payment_out";
+      this.logChange({
+        entityType: isPay ? "payment" : "invoice",
+        entityId: t.id,
+        entityNumber: t.invoiceNumber,
+        action: "deleted",
+        summary: `${t.type.replace("_", " ")} ${t.invoiceNumber} deleted`,
+      });
       return true;
     });
   }
@@ -611,6 +737,79 @@ export class BusinessEngine {
         .filter((l) => l.partyId === key)
         .sort((a, b) => a.date.localeCompare(b.date)),
     );
+  }
+  getPartyStatement(
+    key: string,
+    startDate?: string,
+    endDate?: string,
+  ): PartyStatementResult {
+    const party = this.db.parties.find((p) => p.id === key);
+    if (!party) fail("Party not found");
+
+    const allEntries = this.db.ledgers
+      .filter((l) => l.partyId === key)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let opening = party.openingBalance;
+    if (startDate) {
+      for (const e of allEntries) {
+        if (e.date < startDate) {
+          opening = money(opening + (e.type === "debit" ? e.amount : -e.amount));
+        }
+      }
+    }
+
+    const openingBalanceType: "Dr" | "Cr" | "Settled" =
+      opening > 0 ? "Dr" : opening < 0 ? "Cr" : "Settled";
+    const openingBalanceLabel: "To Receive" | "To Pay" | "Settled" =
+      opening > 0 ? "To Receive" : opening < 0 ? "To Pay" : "Settled";
+
+    const filtered = allEntries.filter((e) => {
+      if (startDate && e.date < startDate) return false;
+      if (endDate && e.date > endDate) return false;
+      return true;
+    });
+
+    let running = opening;
+    let totalDebits = 0;
+    let totalCredits = 0;
+
+    const entries = filtered.map((e) => {
+      if (e.type === "debit") totalDebits = money(totalDebits + e.amount);
+      else totalCredits = money(totalCredits + e.amount);
+      running = money(running + (e.type === "debit" ? e.amount : -e.amount));
+      const balanceType: "Dr" | "Cr" | "Settled" =
+        running > 0 ? "Dr" : running < 0 ? "Cr" : "Settled";
+      const balanceLabel: "To Receive" | "To Pay" | "Settled" =
+        running > 0 ? "To Receive" : running < 0 ? "To Pay" : "Settled";
+      return {
+        ...structuredClone(e),
+        runningBalance: running,
+        balanceType,
+        balanceLabel,
+      };
+    });
+
+    const closingBalance = running;
+    const closingBalanceType: "Dr" | "Cr" | "Settled" =
+      closingBalance > 0 ? "Dr" : closingBalance < 0 ? "Cr" : "Settled";
+    const closingBalanceLabel: "To Receive" | "To Pay" | "Settled" =
+      closingBalance > 0 ? "To Receive" : closingBalance < 0 ? "To Pay" : "Settled";
+
+    return {
+      party: structuredClone(party),
+      startDate,
+      endDate,
+      openingBalance: opening,
+      openingBalanceType,
+      openingBalanceLabel,
+      entries,
+      totalDebits,
+      totalCredits,
+      closingBalance,
+      closingBalanceType,
+      closingBalanceLabel,
+    };
   }
   getExpenses() {
     return structuredClone(this.db.expenses);
@@ -764,10 +963,12 @@ export class BusinessEngine {
       recentTransactions: this.getTransactions().slice(0, 8),
     };
   }
-  getProfitAndLoss() {
+  getProfitAndLoss(startDate?: string, endDate?: string) {
     let salesRevenue = 0,
       purchasesCost = 0;
-    for (const t of this.db.transactions)
+    for (const t of this.db.transactions) {
+      if (startDate && t.date < startDate) continue;
+      if (endDate && t.date > endDate) continue;
       if (t.type === "sale" || t.type === "sale_return") {
         const sign = t.type === "sale" ? 1 : -1;
         salesRevenue += sign * (t.subtotal - t.discountTotal);
@@ -783,8 +984,14 @@ export class BusinessEngine {
             0,
           );
       }
+    }
+    const filteredExpenses = this.db.expenses.filter((e) => {
+      if (startDate && e.date < startDate) return false;
+      if (endDate && e.date > endDate) return false;
+      return true;
+    });
     const totalExpenses = money(
-      this.db.expenses.reduce((s, e) => s + e.amount, 0),
+      filteredExpenses.reduce((s, e) => s + e.amount, 0),
     );
     return {
       salesRevenue: money(salesRevenue),
@@ -792,15 +999,17 @@ export class BusinessEngine {
       grossProfit: money(salesRevenue - purchasesCost),
       totalExpenses,
       netProfit: money(salesRevenue - purchasesCost - totalExpenses),
-      expenseBreakdown: this.getExpenses(),
+      expenseBreakdown: structuredClone(filteredExpenses),
     };
   }
-  getGstReport() {
+  getGstReport(startDate?: string, endDate?: string) {
     let totalTaxableSale = 0,
       totalOutputGst = 0,
       totalTaxablePurchase = 0,
       totalInputGst = 0;
     for (const t of this.db.transactions) {
+      if (startDate && t.date < startDate) continue;
+      if (endDate && t.date > endDate) continue;
       const sign = t.type.endsWith("_return") ? -1 : 1;
       if (t.type === "sale" || t.type === "sale_return") {
         totalTaxableSale += sign * (t.subtotal - t.discountTotal);
@@ -817,6 +1026,15 @@ export class BusinessEngine {
       totalInputGst: money(totalInputGst),
       netGstPayable: money(Math.max(0, totalOutputGst - totalInputGst)),
     };
+  }
+  getBackupMetadata(): BackupMetadata {
+    return structuredClone(this.db.backupMetadata || {});
+  }
+  setBackupMetadata(meta: BackupMetadata) {
+    return this.commit(() => {
+      this.db.backupMetadata = structuredClone(meta);
+      return this.db.backupMetadata;
+    });
   }
   exportBackup() {
     return structuredClone(this.db);
@@ -1042,9 +1260,9 @@ export class BusinessEngine {
         text(t.id, "Transfer ID");
         text(t.fromAccountId, "Source account");
         text(t.toAccountId, "Destination account");
-        number(t.amount, "Transfer amount", 0.01);
       }
     }
+    value.changeHistory = Array.isArray(value.changeHistory) ? value.changeHistory : [];
     return structuredClone(value);
   }
   restoreBackup(value: DatabaseSchema) {

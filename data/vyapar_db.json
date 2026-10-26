@@ -133,6 +133,32 @@
       "id": "party-1792508180105-25",
       "currentBalance": 1200,
       "createdAt": "2026-10-20T14:56:20.105Z"
+    },
+    {
+      "name": "Crefit",
+      "type": "customer",
+      "phone": "121321321",
+      "email": "",
+      "gstin": "",
+      "billingAddress": "",
+      "openingBalance": -10000,
+      "creditLimit": 50000,
+      "id": "party-f864a64a-649d-439c-9524-70c0082d9674",
+      "createdAt": "2026-10-26T08:41:14.015Z",
+      "currentBalance": -10000
+    },
+    {
+      "name": "PAY",
+      "type": "customer",
+      "phone": "45646546454646",
+      "email": "",
+      "gstin": "",
+      "billingAddress": "",
+      "openingBalance": 100000,
+      "creditLimit": 50000,
+      "id": "party-9552a0a4-35f0-4420-889a-95fa85305a6a",
+      "createdAt": "2026-10-26T08:41:47.907Z",
+      "currentBalance": 100000
     }
   ],
   "items": [
@@ -1156,5 +1182,6 @@
     "upiQr": true,
     "taxBreakup": true,
     "notesAndTerms": true
-  }
+  },
+  "changeHistory": []
 }

@@ -11,6 +11,8 @@ import {
   LedgerEntry,
   PrintSettings,
   DashboardStats,
+  ChangeHistoryEntry,
+  BackupMetadata,
 } from './types.js';
 
 export interface DatabaseSchema {
@@ -25,5 +27,7 @@ export interface DatabaseSchema {
   ledgers: LedgerEntry[];
   printSettings: PrintSettings;
   transfers?: { id: string; fromAccountId: string; toAccountId: string; amount: number; notes?: string; createdAt: string }[];
+  changeHistory?: ChangeHistoryEntry[];
+  backupMetadata?: BackupMetadata;
 }
 

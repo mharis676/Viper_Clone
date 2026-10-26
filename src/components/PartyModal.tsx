@@ -24,6 +24,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
   const [gstin, setGstin] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [balanceDirection, setBalanceDirection] = useState<'receive' | 'pay'>('receive');
   const [creditLimit, setCreditLimit] = useState<number>(50000);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -36,7 +37,8 @@ export const PartyModal: React.FC<PartyModalProps> = ({
         setEmail(initialParty.email || '');
         setGstin(initialParty.gstin || '');
         setBillingAddress(initialParty.billingAddress);
-        setOpeningBalance(initialParty.openingBalance);
+        setOpeningBalance(Math.abs(initialParty.openingBalance));
+        setBalanceDirection(initialParty.openingBalance < 0 ? 'pay' : 'receive');
         setCreditLimit(initialParty.creditLimit || 50000);
       } else {
         setName('');
@@ -46,6 +48,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
         setGstin('');
         setBillingAddress('');
         setOpeningBalance(0);
+        setBalanceDirection(defaultType === 'supplier' ? 'pay' : 'receive');
         setCreditLimit(50000);
       }
     }
@@ -69,7 +72,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
         email,
         gstin,
         billingAddress,
-        openingBalance,
+        openingBalance: balanceDirection === 'pay' ? -openingBalance : openingBalance,
         creditLimit,
       });
       onClose();
@@ -184,16 +187,35 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Opening Balance (PKR)</label>
-              <input
-                type="number"
-                className="form-input"
-                placeholder="Positive = Receivable, Negative = Payable"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(parseFloat(e.target.value) || 0)}
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Positive amount indicates you have to receive from party; negative indicates you have to pay.
+              <label className="form-label" htmlFor="opening-balance">Previous / Opening Balance (PKR)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <input
+                  id="opening-balance"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="form-input"
+                  placeholder="Enter amount"
+                  value={openingBalance}
+                  onChange={(e) => setOpeningBalance(Math.abs(parseFloat(e.target.value) || 0))}
+                  aria-describedby="opening-balance-help"
+                />
+                <select
+                  className="form-input"
+                  aria-label="Opening balance type"
+                  value={balanceDirection}
+                  onChange={(e) => setBalanceDirection(e.target.value as 'receive' | 'pay')}
+                >
+                  <option value="receive">To Receive (Debit / Dr)</option>
+                  <option value="pay">To Pay (Credit / Cr)</option>
+                </select>
+              </div>
+              <span id="opening-balance-help" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                {openingBalance === 0
+                  ? 'No previous balance.'
+                  : balanceDirection === 'receive'
+                    ? `The party owes you PKR ${openingBalance.toLocaleString('en-PK')}. Debit (Dr) balance.`
+                    : `You owe the party PKR ${openingBalance.toLocaleString('en-PK')}. Credit (Cr) balance.`}
               </span>
             </div>
           </div>

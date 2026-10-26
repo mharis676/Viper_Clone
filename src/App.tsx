@@ -76,6 +76,8 @@ export const App: React.FC = () => {
   const [invoiceType, setInvoiceType] = useState<TransactionType>("sale");
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] =
+    useState<Transaction | null>(null);
 
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false);
   const [editingParty, setEditingParty] = useState<Party | null>(null);
@@ -176,6 +178,13 @@ export const App: React.FC = () => {
   const openNewInvoiceModal = (type: TransactionType = "sale") => {
     setInvoiceType(type);
     setEditingTransaction(null);
+    setSelectedInvoiceForPayment(null);
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleOpenRecordPaymentForInvoice = (invoice: Transaction) => {
+    setInvoiceType(invoice.type === "purchase" ? "payment_out" : "payment_in");
+    setSelectedInvoiceForPayment(invoice);
     setIsInvoiceModalOpen(true);
   };
 
@@ -438,12 +447,29 @@ export const App: React.FC = () => {
             transactions={transactions}
             onOpenSaleModal={openNewInvoiceModal}
             onViewTransaction={(txn) => {
-
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
+            onDownloadPdfTransaction={(txn, share) => {
+              setPrintTargetTxn(txn);
+              setIsPrintModalOpen(true);
+              return Promise.resolve();
+            }}
+            onPrintTransaction={(txn) => {
+              setPrintTargetTxn(txn);
+              setIsPrintModalOpen(true);
+              return Promise.resolve();
+            }}
             onDeleteTransaction={handleDeleteTransaction}
             onConvertQuotation={handleConvertQuotation}
+            onOpenWhatsAppReminder={(txn) => {
+              const party = parties.find((p) => p.id === txn.partyId);
+              if (party) {
+                setWhatsAppParty(party);
+                setIsWhatsAppModalOpen(true);
+              }
+            }}
+            onOpenRecordPayment={handleOpenRecordPaymentForInvoice}
           />
         )}
 
@@ -452,11 +478,21 @@ export const App: React.FC = () => {
             transactions={transactions}
             onOpenPurchaseModal={(type) => openNewInvoiceModal(type)}
             onViewTransaction={(txn) => {
-
               setPrintTargetTxn(txn);
               setIsPrintModalOpen(true);
             }}
+            onDownloadPdfTransaction={(txn, share) => {
+              setPrintTargetTxn(txn);
+              setIsPrintModalOpen(true);
+              return Promise.resolve();
+            }}
+            onPrintTransaction={(txn) => {
+              setPrintTargetTxn(txn);
+              setIsPrintModalOpen(true);
+              return Promise.resolve();
+            }}
             onDeleteTransaction={handleDeleteTransaction}
+            onOpenRecordPayment={handleOpenRecordPaymentForInvoice}
           />
         )}
 
@@ -528,8 +564,12 @@ export const App: React.FC = () => {
           type={invoiceType}
           parties={parties}
           transactions={transactions}
+          initialInvoice={selectedInvoiceForPayment}
           onSave={handleSaveTransaction}
-          onClose={() => setIsInvoiceModalOpen(false)}
+          onClose={() => {
+            setIsInvoiceModalOpen(false);
+            setSelectedInvoiceForPayment(null);
+          }}
         />
       ) : (
         <InvoiceModal

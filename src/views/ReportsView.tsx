@@ -1,5 +1,5 @@
 import { csvCell, exportFile, printDocument, exportPdf } from "../export.js";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   FileBarChart,
   Download,
@@ -10,8 +10,12 @@ import {
   Percent,
   CheckCircle,
   Package,
+  Calendar,
 } from "lucide-react";
 import { ProfitAndLossReport, GstReport, Item, Transaction } from "../types.js";
+import { DateRangeFilter, DateRange } from "../components/DateRangeFilter.js";
+import { DocumentActions } from "../components/DocumentActions.js";
+import { api } from "../api.js";
 
 interface ReportsViewProps {
   pnlReport: ProfitAndLossReport | null;
@@ -21,8 +25,8 @@ interface ReportsViewProps {
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
-  pnlReport,
-  gstReport,
+  pnlReport: initialPnl,
+  gstReport: initialGst,
   items,
   transactions,
 }) => {
@@ -33,6 +37,49 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     "pnl" | "gst" | "stock"
   >("pnl");
 
+  const [dateRange, setDateRange] = useState<DateRange>({
+    startDate: "",
+    endDate: "",
+    preset: "all",
+  });
+
+  const [pnlReport, setPnlReport] = useState<ProfitAndLossReport | null>(initialPnl);
+  const [gstReport, setGstReport] = useState<GstReport | null>(initialGst);
+  const [loadingReports, setLoadingReports] = useState(false);
+
+  // Sync initial props
+  useEffect(() => {
+    if (dateRange.preset === "all" && !dateRange.startDate && !dateRange.endDate) {
+      if (initialPnl) setPnlReport(initialPnl);
+      if (initialGst) setGstReport(initialGst);
+    }
+  }, [initialPnl, initialGst]);
+
+  const loadFilteredReports = async (range: DateRange) => {
+    setLoadingReports(true);
+    try {
+      const [pnlRes, gstRes] = await Promise.all([
+        api.getProfitAndLoss(range.startDate || undefined, range.endDate || undefined),
+        api.getGstReport(range.startDate || undefined, range.endDate || undefined),
+      ]);
+      setPnlReport(pnlRes);
+      setGstReport(gstRes);
+    } catch (err) {
+      console.error("Failed to load date-filtered reports:", err);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const handleDateRangeChange = (newRange: DateRange) => {
+    setDateRange(newRange);
+    loadFilteredReports(newRange);
+  };
+
+  const dateSuffix = dateRange.startDate
+    ? `_${dateRange.startDate}_to_${dateRange.endDate || "present"}`
+    : "";
+
   const download = async (name: string, content: string) => {
     try {
       await exportFile(name, content);
@@ -40,6 +87,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       alert(e.message);
     }
   };
+
   const exportStockSummaryCSV = () => {
     const headers = [
       "Item Name",
@@ -66,15 +114,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       i.currentStock * i.salesPrice,
     ]);
     return download(
-      "Viper_Stock_Summary.csv",
+      `Viper_Stock_Summary${dateSuffix}.csv`,
       [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n"),
     );
   };
+
   const exportPnlCSV = () => {
     if (!pnlReport) return;
+    const periodLabel = dateRange.startDate
+      ? `Date Range: ${dateRange.startDate} to ${dateRange.endDate || "Present"}\n\n`
+      : "Date Range: All Time\n\n";
+
     return download(
-      "Viper_Profit_Loss.csv",
-      "Metric,Amount (PKR)\n" +
+      `Viper_Profit_Loss${dateSuffix}.csv`,
+      periodLabel +
+        "Metric,Amount (PKR)\n" +
         [
           ["Net Sales Revenue", pnlReport.salesRevenue],
           ["Cost of Goods Sold", pnlReport.purchasesCost],
@@ -86,12 +140,24 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           .join("\n"),
     );
   };
+
   const exportGstCSV = () => {
     if (!gstReport) return;
+    const periodLabel = dateRange.startDate
+      ? `GST Report Period: ${dateRange.startDate} to ${dateRange.endDate || "Present"}\n\n`
+      : "GST Report Period: All Time\n\n";
+
     return download(
-      "Viper_GST_Report.csv",
-      "Metric,Amount (PKR)\n" +
-        Object.entries(gstReport)
+      `Viper_GST_Tax_Report${dateSuffix}.csv`,
+      periodLabel +
+        "Metric,Amount (PKR)\n" +
+        [
+          ["Total Taxable Sales (Output)", gstReport.totalTaxableSale],
+          ["Total Output GST Liability", gstReport.totalOutputGst],
+          ["Total Taxable Purchases (Input)", gstReport.totalTaxablePurchase],
+          ["Total Input GST Credit", gstReport.totalInputGst],
+          ["Net GST Payable to Govt", gstReport.netGstPayable],
+        ]
           .map((row) => row.map(csvCell).join(","))
           .join("\n"),
     );
@@ -106,16 +172,43 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     0,
   );
 
-  const reportTitle = activeReportTab === "gst" ? "GST Tax Report" : activeReportTab === "stock" ? "Stock Valuation Summary" : "Profit & Loss Statement";
-  const reportReady = activeReportTab === "stock" || (activeReportTab === "gst" ? !!gstReport : !!pnlReport);
-  const downloadPdf = async () => {
+  const reportTitle =
+    activeReportTab === "gst"
+      ? "GST Tax Report (GSTR-1 / 2)"
+      : activeReportTab === "stock"
+        ? "Stock Valuation Summary"
+        : "Profit & Loss Statement";
+
+  const reportReady =
+    activeReportTab === "stock" ||
+    (activeReportTab === "gst" ? !!gstReport : !!pnlReport);
+
+  const downloadPdf = async (share = false) => {
     if (!reportRef.current || !reportReady || exporting) return;
     setExporting(true);
-    try { await exportPdf(reportRef.current, `Viper_${reportTitle}`); }
-    catch (error) { alert((error as Error).message); }
-    finally { setExporting(false); }
+    try {
+      await exportPdf(
+        reportRef.current,
+        `Viper_${reportTitle.replace(/[\s\(\)\/]/g, "_")}${dateSuffix}`,
+        share,
+      );
+    } catch (error) {
+      if ((error as Error).name !== "AbortError") alert((error as Error).message);
+    } finally {
+      setExporting(false);
+    }
   };
-  const reportContent = <>
+
+  const handlePrint = async () => {
+    try {
+      await printDocument();
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const reportContent = (
+    <>
       {/* 1. Profit & Loss View */}
       {activeReportTab === "pnl" && pnlReport && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -134,11 +227,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
               </div>
               <div className="kpi-value" style={{ color: "#2E7D32" }}>
-                PKR {pnlReport.grossProfit.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                PKR {pnlReport.grossProfit.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                Sales Revenue (PKR {pnlReport.salesRevenue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}) -
-                Cost of goods sold (PKR {pnlReport.purchasesCost.toLocaleString('en-PK', { maximumFractionDigits: 2 })})
+                Sales Revenue (PKR {pnlReport.salesRevenue.toLocaleString("en-PK", { maximumFractionDigits: 2 })}) - Cost of goods (PKR {pnlReport.purchasesCost.toLocaleString("en-PK", { maximumFractionDigits: 2 })})
               </div>
             </div>
 
@@ -158,11 +250,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   color: pnlReport.netProfit >= 0 ? "#2E7D32" : "#C62828",
                 }}
               >
-                PKR {pnlReport.netProfit.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                PKR {pnlReport.netProfit.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                Gross Profit - Operating Expenses (PKR{" "}
-                {pnlReport.totalExpenses.toLocaleString('en-PK', { maximumFractionDigits: 2 })})
+                Gross Profit - Operating Expenses (PKR {pnlReport.totalExpenses.toLocaleString("en-PK", { maximumFractionDigits: 2 })})
               </div>
             </div>
           </div>
@@ -179,21 +270,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <tr style={{ background: "var(--bg-main)", fontWeight: 700 }}>
                     <td colSpan={2}>1. REVENUE FROM SALES</td>
                     <td style={{ textAlign: "right" }}>
-                      PKR {pnlReport.salesRevenue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      PKR {pnlReport.salesRevenue.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr>
                     <td style={{ paddingLeft: 30 }}>Gross Product Sales</td>
                     <td>Invoiced Revenue</td>
                     <td style={{ textAlign: "right" }}>
-                      PKR {pnlReport.salesRevenue.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      PKR {pnlReport.salesRevenue.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
 
                   <tr style={{ background: "var(--bg-main)", fontWeight: 700 }}>
                     <td colSpan={2}>2. COST OF GOODS SOLD</td>
                     <td style={{ textAlign: "right", color: "var(--danger)" }}>
-                      -PKR {pnlReport.purchasesCost.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      -PKR {pnlReport.purchasesCost.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
 
@@ -206,14 +297,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   >
                     <td colSpan={2}>GROSS PROFIT (1 - 2)</td>
                     <td style={{ textAlign: "right", color: "var(--success)" }}>
-                      PKR {pnlReport.grossProfit.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      PKR {pnlReport.grossProfit.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
 
                   <tr style={{ background: "var(--bg-main)", fontWeight: 700 }}>
                     <td colSpan={2}>3. OPERATING EXPENDITURES</td>
                     <td style={{ textAlign: "right", color: "var(--danger)" }}>
-                      -PKR {pnlReport.totalExpenses.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      -PKR {pnlReport.totalExpenses.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                   {pnlReport.expenseBreakdown.map((exp) => (
@@ -221,7 +312,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       <td style={{ paddingLeft: 30 }}>{exp.categoryName}</td>
                       <td>{exp.notes || exp.paidTo || "Operational"}</td>
                       <td style={{ textAlign: "right" }}>
-                        PKR {exp.amount.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                        PKR {exp.amount.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}
@@ -241,7 +332,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         color: pnlReport.netProfit >= 0 ? "#2E7D32" : "#C62828",
                       }}
                     >
-                      PKR {pnlReport.netProfit.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                      PKR {pnlReport.netProfit.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                     </td>
                   </tr>
                 </tbody>
@@ -268,33 +359,32 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   <Percent size={18} />
                 </div>
               </div>
-              <div className="kpi-value">
-                PKR {gstReport.totalOutputGst.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+              <div className="kpi-value" style={{ color: "#1976D2" }}>
+                PKR {gstReport.totalOutputGst.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                Taxable Sales: PKR {gstReport.totalTaxableSale.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                Tax on taxable sales of PKR {gstReport.totalTaxableSale.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
             </div>
 
             <div
               className="kpi-card"
-              style={{ "--card-accent": "#00897B" } as React.CSSProperties}
+              style={{ "--card-accent": "#2E7D32" } as React.CSSProperties}
             >
               <div className="kpi-header">
-                <span>Input Tax Credit (ITC - Purchases)</span>
+                <span>Input GST Credit (Purchases)</span>
                 <div
                   className="kpi-icon-wrap"
-                  style={{ background: "#E0F2F1", color: "#00897B" }}
+                  style={{ background: "#E8F5E9", color: "#2E7D32" }}
                 >
-                  <CheckCircle size={18} />
+                  <Percent size={18} />
                 </div>
               </div>
-              <div className="kpi-value" style={{ color: "#00897B" }}>
-                PKR {gstReport.totalInputGst.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+              <div className="kpi-value" style={{ color: "#2E7D32" }}>
+                PKR {gstReport.totalInputGst.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                Taxable Purchases: PKR{" "}
-                {gstReport.totalTaxablePurchase.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                Tax paid on purchases of PKR {gstReport.totalTaxablePurchase.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
             </div>
 
@@ -309,7 +399,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
               </div>
               <div className="kpi-value" style={{ color: "#C62828" }}>
-                PKR {gstReport.netGstPayable.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                PKR {gstReport.netGstPayable.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                 Output GST - Eligible Input Tax Credit
@@ -337,7 +427,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
               </div>
               <div className="kpi-value">
-                PKR {totalStockCostValuation.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                PKR {totalStockCostValuation.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                 At purchase prices
@@ -358,7 +448,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 </div>
               </div>
               <div className="kpi-value" style={{ color: "#2E7D32" }}>
-                PKR {totalStockRetailValuation.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                PKR {totalStockRetailValuation.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                 At sales selling prices
@@ -405,16 +495,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                           {i.currentStock} {i.unit}
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          PKR {i.purchasePrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                          PKR {i.purchasePrice.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                         </td>
                         <td style={{ textAlign: "right" }}>
-                          PKR {i.salesPrice.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                          PKR {i.salesPrice.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                         </td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>
-                          PKR {costVal.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                          PKR {costVal.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                         </td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>
-                          PKR {retailVal.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                          PKR {retailVal.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                         </td>
                         <td
                           style={{
@@ -423,7 +513,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                             color: "var(--success)",
                           }}
                         >
-                          +PKR {margin.toLocaleString('en-PK', { maximumFractionDigits: 2 })}
+                          +PKR {margin.toLocaleString("en-PK", { maximumFractionDigits: 2 })}
                         </td>
                       </tr>
                     );
@@ -434,7 +524,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
         </div>
       )}
-  </>;
+    </>
+  );
 
   return (
     <div className="page-body">
@@ -445,23 +536,26 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <span>Financial & Tax Reports</span>
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            GST summary, real-time Profit & Loss statement, and stock valuation
-            audits
+            GST summary, real-time Profit & Loss statement, and stock valuation audits
           </p>
         </div>
 
-        <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <button className="btn btn-secondary" disabled={!reportReady || exporting} onClick={() => setPreviewOpen(true)}><Eye size={16} />View</button>
-          <button className="btn btn-primary" disabled={!reportReady || exporting} onClick={downloadPdf}><Download size={16} />{exporting ? "Preparing PDF..." : "Download PDF"}</button>
+        <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Consistent Document Actions everywhere */}
+          <DocumentActions
+            variant="bar"
+            size="sm"
+            showLabels={true}
+            documentTitle={reportTitle}
+            onView={() => setPreviewOpen(true)}
+            onDownloadPdf={() => downloadPdf(false)}
+            onShare={() => downloadPdf(true)}
+            onPrint={handlePrint}
+          />
+
           <button
-            className="btn btn-secondary"
-            onClick={() => printDocument().catch((e) => alert(e.message))}
-          >
-            <Printer size={16} />
-            <span>Print Report</span>
-          </button>
-          <button
-            className="btn btn-primary"
+            type="button"
+            className="btn btn-secondary btn-sm"
             onClick={
               activeReportTab === "stock"
                 ? exportStockSummaryCSV
@@ -470,14 +564,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   : exportPnlCSV
             }
           >
-            <Download size={16} />
+            <Download size={15} />
             <span>Export CSV</span>
           </button>
         </div>
       </div>
 
+      {/* Date Range Filter for Statements, Reports, and GST */}
+      {activeReportTab !== "stock" && (
+        <div style={{ marginBottom: 16 }}>
+          <DateRangeFilter value={dateRange} onChange={handleDateRangeChange} />
+        </div>
+      )}
+
       {/* Report Tabs */}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         <button
           className={`btn btn-sm ${activeReportTab === "pnl" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => setActiveReportTab("pnl")}
@@ -499,21 +600,61 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       </div>
 
       <div ref={reportRef} className="print-area">
-        <h3 style={{ marginBottom: 16 }}>{reportTitle}</h3>
-        {reportContent}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ margin: 0 }}>{reportTitle}</h3>
+          {dateRange.startDate && (
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>
+              Period: {dateRange.startDate} to {dateRange.endDate || "Present"}
+            </span>
+          )}
+        </div>
+        {loadingReports ? (
+          <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+            Updating reports for selected date range...
+          </div>
+        ) : (
+          reportContent
+        )}
       </div>
+
       {previewOpen && (
         <div className="modal-overlay" onClick={() => setPreviewOpen(false)}>
-          <div className="modal-card modal-lg" role="dialog" aria-modal="true" aria-label={`${reportTitle} preview`} onClick={(event) => event.stopPropagation()}>
+          <div
+            className="modal-card modal-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${reportTitle} preview`}
+            onClick={(event) => event.stopPropagation()}
+            style={{ maxWidth: 880 }}
+          >
             <div className="modal-header no-print" style={{ flexWrap: "wrap", gap: 10 }}>
               <h3>{reportTitle} - Preview</h3>
-              <button className="btn btn-primary" disabled={exporting} onClick={downloadPdf}>
-                <Download size={16} /> {exporting ? "Preparing PDF..." : "Download PDF"}
+              <DocumentActions
+                variant="bar"
+                size="sm"
+                showLabels={true}
+                documentTitle={reportTitle}
+                onDownloadPdf={() => downloadPdf(false)}
+                onShare={() => downloadPdf(true)}
+                onPrint={handlePrint}
+              />
+              <button
+                className="btn-icon"
+                aria-label="Close report preview"
+                onClick={() => setPreviewOpen(false)}
+              >
+                <X size={18} />
               </button>
-              <button className="btn-icon" aria-label="Close report preview" onClick={() => setPreviewOpen(false)}><X size={18} /></button>
             </div>
             <div className="modal-body" style={{ background: "white", color: "#111827" }}>
-              <h3 style={{ marginBottom: 16 }}>{reportTitle}</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0 }}>{reportTitle}</h3>
+                {dateRange.startDate && (
+                  <span style={{ fontSize: "0.85rem", color: "#6b7280", fontWeight: 600 }}>
+                    Period: {dateRange.startDate} to {dateRange.endDate || "Present"}
+                  </span>
+                )}
+              </div>
               {reportContent}
             </div>
           </div>

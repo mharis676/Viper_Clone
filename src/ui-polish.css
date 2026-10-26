@@ -152,6 +152,45 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--primary); outli
   .dashboard-empty { padding: 30px 20px; }
   .modal-header, .modal-body { padding: 16px; }
   .modal-header h3 { font-size: 18px !important; }
+
+  /* Mobile Document Actions & Buttons touch target >= 44px */
+  .document-actions-row .btn-icon {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 8px;
+  }
+  .document-actions-bar .btn,
+  .document-actions-modal-footer .btn {
+    min-height: 42px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  /* Date Range Filter responsive on mobile */
+  .date-range-filter-card {
+    padding: 10px !important;
+  }
+
+  /* Ensure modal card fits nicely on mobile screens */
+  .modal-card {
+    width: 95vw !important;
+    max-height: 90vh !important;
+    margin: auto;
+  }
+}
+@media (max-width: 480px) {
+  .document-actions-modal-footer {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .modal-footer > * {
+    width: 100%;
+    justify-content: center;
+  }
 }
 @media (max-width: 359px) {
   .kpi-grid, .dashboard-page .kpi-grid { grid-template-columns: minmax(0, 1fr); }

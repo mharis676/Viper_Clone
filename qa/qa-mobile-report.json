@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-10-26T08:29:18.072Z",
+  "viewportsTested": [
+    "360x780",
+    "390x844",
+    "412x915",
+    "768x1024"
+  ],
+  "featuresVerified": [
+    {
+      "id": 1,
+      "name": "Clear ledger balances (Dr / Cr & To Receive / To Pay)",
+      "status": "PASS"
+    },
+    {
+      "id": 2,
+      "name": "Date filters for statements, reports, and GST exports",
+      "status": "PASS"
+    },
+    {
+      "id": 3,
+      "name": "Invoice payment history breakdown",
+      "status": "PASS"
+    },
+    {
+      "id": 4,
+      "name": "Overdue tracking grouped by aging buckets",
+      "status": "PASS"
+    },
+    {
+      "id": 5,
+      "name": "Consistent document actions (View, Download PDF, Share, Print)",
+      "status": "PASS"
+    },
+    {
+      "id": 6,
+      "name": "Payment allocation to client invoices",
+      "status": "PASS"
+    },
+    {
+      "id": 7,
+      "name": "Change history recording edits to invoices, payments, and opening balances",
+      "status": "PASS"
+    },
+    {
+      "id": 8,
+      "name": "Backup and restore with last successful backup status and easy recovery",
+      "status": "PASS"
+    }
+  ],
+  "mobileMetrics": {
+    "touchTargetsStandardMet": true,
+    "viewportsSupported": [
+      "360px (Android small)",
+      "390px (iPhone standard)",
+      "412px (Samsung Galaxy)",
+      "768px (Tablet)"
+    ],
+    "cssAuditPassed": true
+  }
+}

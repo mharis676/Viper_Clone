@@ -80,6 +80,19 @@ app.get('/api/parties/:id/ledger', (req: Request, res: Response) => {
   res.json(ledger);
 });
 
+app.get('/api/parties/:id/statement', (req: Request, res: Response) => {
+  try {
+    const statement = db.getPartyStatement(
+      String(req.params.id),
+      req.query.startDate ? String(req.query.startDate) : undefined,
+      req.query.endDate ? String(req.query.endDate) : undefined,
+    );
+    res.json(statement);
+  } catch (err: any) {
+    res.status(404).json({ error: err.message });
+  }
+});
+
 // Items & Inventory
 app.get('/api/items', (req: Request, res: Response) => {
   res.json(db.getItems());
@@ -149,6 +162,16 @@ app.post('/api/transactions', (req: Request, res: Response) => {
   }
 });
 
+app.put('/api/transactions/:id', (req: Request, res: Response) => {
+  try {
+    const updated = db.updateTransaction(String(req.params.id), req.body);
+    if (!updated) return res.status(404).json({ error: 'Transaction not found' });
+    res.json(updated);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.delete('/api/transactions/:id', (req: Request, res: Response) => {
   const success = db.deleteTransaction(String(req.params.id));
   if (!success) return res.status(404).json({ error: 'Transaction not found' });
@@ -211,11 +234,23 @@ app.post('/api/accounts/transfer', (req: Request, res: Response) => {
 
 // Reports
 app.get('/api/reports/pnl', (req: Request, res: Response) => {
-  res.json(db.getProfitAndLoss());
+  const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+  const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+  res.json(db.getProfitAndLoss(startDate, endDate));
 });
 
 app.get('/api/reports/gst', (req: Request, res: Response) => {
-  res.json(db.getGstReport());
+  const startDate = req.query.startDate ? String(req.query.startDate) : undefined;
+  const endDate = req.query.endDate ? String(req.query.endDate) : undefined;
+  res.json(db.getGstReport(startDate, endDate));
+});
+
+// Change History (Audit Trail)
+app.get('/api/history', (req: Request, res: Response) => {
+  const entityType = req.query.entityType ? String(req.query.entityType) : undefined;
+  const entityId = req.query.entityId ? String(req.query.entityId) : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  res.json(db.getChangeHistory({ entityType, entityId, limit }));
 });
 
 // Print Settings
@@ -239,6 +274,14 @@ app.post('/api/backup/restore', (req: Request, res: Response) => {
   const success = db.restoreBackup(req.body);
   if (!success) return res.status(400).json({ error: 'Invalid backup file structure' });
   res.json({ success: true, message: 'Database restored successfully' });
+});
+
+app.get('/api/backup/last', (req: Request, res: Response) => {
+  res.json(db.getBackupMetadata());
+});
+
+app.post('/api/backup/last', (req: Request, res: Response) => {
+  res.json(db.setBackupMetadata(req.body));
 });
 
 // Serve client static files if built
