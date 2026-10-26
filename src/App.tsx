@@ -410,6 +410,11 @@ export const App: React.FC = () => {
               setWhatsAppParty(p);
               setIsWhatsAppModalOpen(true);
             }}
+            onViewDocument={(id) => {
+              const txn = transactions.find((t) => t.id === id);
+              if (txn) { setPrintTargetTxn(txn); setIsPrintModalOpen(true); }
+              else alert("This ledger entry has no available invoice or bill.");
+            }}
             onViewLedger={(p) => api.getPartyLedger(p.id)}
           />
         )}

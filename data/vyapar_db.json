@@ -52,7 +52,7 @@
       "gstin": "27AABCN8899M1ZT",
       "billingAddress": "Lamington Road, Mumbai",
       "openingBalance": -28500,
-      "currentBalance": -28500,
+      "currentBalance": -28995.6,
       "creditLimit": 200000,
       "createdAt": "2026-10-20T14:41:10.075Z"
     },
@@ -149,7 +149,7 @@
       "taxRate": 18,
       "hsnCode": "847160",
       "minStockAlert": 10,
-      "currentStock": 33,
+      "currentStock": 34,
       "godownId": "godown-1",
       "createdAt": "2026-10-20T14:41:10.075Z"
     },
@@ -334,6 +334,59 @@
     }
   ],
   "transactions": [
+    {
+      "invoiceNumber": "BILL-86078838-7fe",
+      "type": "purchase",
+      "partyId": "party-3",
+      "partyName": "National Electronics Wholesalers",
+      "date": "2026-10-26",
+      "dueDate": "2026-11-10",
+      "notes": "",
+      "interstate": false,
+      "items": [
+        {
+          "itemId": "item-1",
+          "itemName": "Wireless Bluetooth Optical Mouse",
+          "itemCode": "ITM-101",
+          "hsnCode": "847160",
+          "quantity": 1,
+          "unit": "Pcs",
+          "price": 420,
+          "discountPercent": 0,
+          "discountAmount": 0,
+          "taxRate": 18,
+          "taxAmount": 75.6,
+          "total": 495.6,
+          "costPrice": 420
+        }
+      ],
+      "subtotal": 420,
+      "discountTotal": 0,
+      "taxTotal": 75.6,
+      "cgst": 37.8,
+      "sgst": 37.8,
+      "igst": 0,
+      "total": 495.6,
+      "paidAmount": 0,
+      "initialPaidAmount": 0,
+      "balanceDue": 495.6,
+      "paymentMode": "cash",
+      "status": "unpaid",
+      "id": "txn-55dd1c41-5fe8-4d55-af2e-5459bbaabecd",
+      "createdAt": "2026-10-26T06:39:42.072Z",
+      "effects": {
+        "party": -495.6,
+        "cash": 0,
+        "accountId": "acc-1",
+        "stock": [
+          {
+            "itemId": "item-1",
+            "delta": 1
+          }
+        ]
+      },
+      "creditedAmount": 0
+    },
     {
       "invoiceNumber": "INV-b81cf764-bb1",
       "type": "sale",
@@ -1081,6 +1134,18 @@
       "amount": 885,
       "runningBalance": 2085,
       "description": "sale"
+    },
+    {
+      "id": "led-023d524c-0b1e-420f-aa8f-405b4839b1cd",
+      "date": "2026-10-26",
+      "partyId": "party-3",
+      "partyName": "National Electronics Wholesalers",
+      "transactionId": "txn-55dd1c41-5fe8-4d55-af2e-5459bbaabecd",
+      "invoiceNumber": "BILL-86078838-7fe",
+      "type": "credit",
+      "amount": 495.6,
+      "runningBalance": -28995.6,
+      "description": "purchase"
     }
   ],
   "printSettings": {

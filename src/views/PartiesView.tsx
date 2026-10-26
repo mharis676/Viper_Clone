@@ -1,5 +1,5 @@
-import { printDocument } from '../export.js';
-import React, { useState } from 'react';
+import { printDocument, exportPdf } from '../export.js';
+import React, { useState, useRef } from 'react';
 import {
   Users,
   Plus,
@@ -19,6 +19,7 @@ interface PartiesViewProps {
   onEditParty: (party: Party) => void;
   onDeleteParty: (id: string) => void;
   onOpenWhatsApp: (party: Party) => void;
+  onViewDocument: (id: string) => void;
   onViewLedger: (party: Party) => Promise<LedgerEntry[]>;
 }
 
@@ -29,7 +30,18 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
   onDeleteParty,
   onOpenWhatsApp,
   onViewLedger,
+  onViewDocument,
 }) => {
+  const statementRef = useRef<HTMLDivElement>(null);
+  const [reviewing, setReviewing] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const handlePdf = async (share = false) => {
+    if (!statementRef.current || !selectedParty) return;
+    setExporting(true);
+    try { await exportPdf(statementRef.current, `${selectedParty.name}-statement`, share); }
+    catch (e) { if ((e as Error).name !== 'AbortError') alert((e as Error).message); }
+    finally { setExporting(false); }
+  };
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'supplier'>('all');
   const [search, setSearch] = useState('');
   const [selectedParty, setSelectedParty] = useState<Party | null>(null);
@@ -47,6 +59,8 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
 
   const handleOpenPartyLedger = async (party: Party) => {
     setSelectedParty(party);
+    setReviewing(false);
+    setLedgerEntries([]);
     setLoadingLedger(true);
     try {
       const entries = await onViewLedger(party);
@@ -229,7 +243,10 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
               </button>
             </div>
 
-            <div className="modal-body">
+            <div className="modal-body print-area" ref={statementRef} data-pdf-active>
+              <h3>{selectedParty.name} — Statement of Accounts</h3>
+              <p>{selectedParty.billingAddress} | Phone: {selectedParty.phone}</p>
+              <p>Current balance: PKR {selectedParty.currentBalance.toLocaleString('en-PK')}</p>
               {loadingLedger ? (
                 <div style={{ padding: 30, textAlign: 'center' }}>Loading ledger statement...</div>
               ) : ledgerEntries.length === 0 ? (
@@ -255,6 +272,7 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
                           <td>{entry.date}</td>
                           <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                             {entry.invoiceNumber || '-'}
+                            {!reviewing && entry.transactionId && <button className="btn btn-secondary btn-sm no-print" onClick={() => onViewDocument(entry.transactionId)}>View Invoice / Bill</button>}
                           </td>
                           <td>{entry.description}</td>
                           <td style={{ textAlign: 'right', fontWeight: 600, color: entry.type === 'debit' ? 'var(--danger)' : 'inherit' }}>
@@ -274,7 +292,10 @@ export const PartiesView: React.FC<PartiesViewProps> = ({
               )}
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer no-print" style={{ flexWrap: 'wrap' }}>
+              <button className="btn btn-secondary" disabled={loadingLedger} onClick={() => setReviewing(!reviewing)}>{reviewing ? 'Back to Ledger' : 'Review Statement'}</button>
+              <button className="btn btn-primary" disabled={loadingLedger || exporting} onClick={() => handlePdf()}>Download PDF</button>
+              <button className="btn btn-secondary" disabled={loadingLedger || exporting} onClick={() => handlePdf(true)}>Share PDF</button>
               <button className="btn btn-secondary" onClick={() => setSelectedParty(null)}>
                 Close
               </button>

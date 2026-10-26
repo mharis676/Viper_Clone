@@ -1,5 +1,5 @@
-import { printDocument } from "../export.js";
-import React, { useEffect, useRef } from "react";
+import { printDocument, exportPdf } from "../export.js";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Printer } from "lucide-react";
 import JsBarcode from "jsbarcode";
 import { Transaction, BusinessProfile, PrintSettings } from "../types.js";
@@ -19,6 +19,15 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   profile,
   printSettings,
 }) => {
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const handlePdf = async (share = false) => {
+    if (!pdfRef.current || !transaction) return;
+    setExporting(true);
+    try { await exportPdf(pdfRef.current, transaction.invoiceNumber, share); }
+    catch (e) { if ((e as Error).name !== "AbortError") alert((e as Error).message); }
+    finally { setExporting(false); }
+  };
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const barcodeSvgRef = useRef<SVGSVGElement>(null);
 
@@ -65,15 +74,17 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header no-print">
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h3>Invoice Print Preview</h3>
+            <h3>Document Preview</h3>
             <span className="sidebar-badge">
               {printSettings.paperSize.replace(/_/g, " ")}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button className="btn btn-primary btn-sm" disabled={exporting} onClick={() => handlePdf()}>Download PDF</button>
+            <button className="btn btn-secondary btn-sm" disabled={exporting} onClick={() => handlePdf(true)}>Share PDF</button>
             <button className="btn btn-primary btn-sm" onClick={handlePrint}>
               <Printer size={16} />
-              <span>Print Invoice</span>
+              <span>Print</span>
             </button>
             <button className="btn-icon" onClick={onClose}>
               <X size={18} />
@@ -82,6 +93,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         </div>
 
         <div
+          ref={pdfRef}
+          data-pdf-active
           className="modal-body print-area"
           style={{ background: "#f8fafc", padding: 20 }}
         >

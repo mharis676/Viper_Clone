@@ -1,8 +1,10 @@
-import { csvCell, exportFile, printDocument } from "../export.js";
-import React, { useState } from "react";
+import { csvCell, exportFile, printDocument, exportPdf } from "../export.js";
+import React, { useState, useRef } from "react";
 import {
   FileBarChart,
   Download,
+  Eye,
+  X,
   Printer,
   TrendingUp,
   Percent,
@@ -24,6 +26,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   items,
   transactions,
 }) => {
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [activeReportTab, setActiveReportTab] = useState<
     "pnl" | "gst" | "stock"
   >("pnl");
@@ -101,66 +106,16 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     0,
   );
 
-  return (
-    <div className="page-body">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">
-            <FileBarChart size={24} color="var(--primary)" />
-            <span>Financial & Tax Reports</span>
-          </h2>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            GST summary, real-time Profit & Loss statement, and stock valuation
-            audits
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            className="btn btn-secondary"
-            onClick={() => printDocument().catch((e) => alert(e.message))}
-          >
-            <Printer size={16} />
-            <span>Print Report</span>
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={
-              activeReportTab === "stock"
-                ? exportStockSummaryCSV
-                : activeReportTab === "gst"
-                  ? exportGstCSV
-                  : exportPnlCSV
-            }
-          >
-            <Download size={16} />
-            <span>Export CSV</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Report Tabs */}
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          className={`btn btn-sm ${activeReportTab === "pnl" ? "btn-primary" : "btn-secondary"}`}
-          onClick={() => setActiveReportTab("pnl")}
-        >
-          Profit & Loss Statement
-        </button>
-        <button
-          className={`btn btn-sm ${activeReportTab === "gst" ? "btn-primary" : "btn-secondary"}`}
-          onClick={() => setActiveReportTab("gst")}
-        >
-          GST Tax Report (GSTR-1 / 2)
-        </button>
-        <button
-          className={`btn btn-sm ${activeReportTab === "stock" ? "btn-primary" : "btn-secondary"}`}
-          onClick={() => setActiveReportTab("stock")}
-        >
-          Stock Valuation Summary
-        </button>
-      </div>
-
+  const reportTitle = activeReportTab === "gst" ? "GST Tax Report" : activeReportTab === "stock" ? "Stock Valuation Summary" : "Profit & Loss Statement";
+  const reportReady = activeReportTab === "stock" || (activeReportTab === "gst" ? !!gstReport : !!pnlReport);
+  const downloadPdf = async () => {
+    if (!reportRef.current || !reportReady || exporting) return;
+    setExporting(true);
+    try { await exportPdf(reportRef.current, `Viper_${reportTitle}`); }
+    catch (error) { alert((error as Error).message); }
+    finally { setExporting(false); }
+  };
+  const reportContent = <>
       {/* 1. Profit & Loss View */}
       {activeReportTab === "pnl" && pnlReport && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -475,6 +430,91 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+  </>;
+
+  return (
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">
+            <FileBarChart size={24} color="var(--primary)" />
+            <span>Financial & Tax Reports</span>
+          </h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+            GST summary, real-time Profit & Loss statement, and stock valuation
+            audits
+          </p>
+        </div>
+
+        <div className="no-print" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="btn btn-secondary" disabled={!reportReady || exporting} onClick={() => setPreviewOpen(true)}><Eye size={16} />View</button>
+          <button className="btn btn-primary" disabled={!reportReady || exporting} onClick={downloadPdf}><Download size={16} />{exporting ? "Preparing PDF..." : "Download PDF"}</button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => printDocument().catch((e) => alert(e.message))}
+          >
+            <Printer size={16} />
+            <span>Print Report</span>
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={
+              activeReportTab === "stock"
+                ? exportStockSummaryCSV
+                : activeReportTab === "gst"
+                  ? exportGstCSV
+                  : exportPnlCSV
+            }
+          >
+            <Download size={16} />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Report Tabs */}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className={`btn btn-sm ${activeReportTab === "pnl" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveReportTab("pnl")}
+        >
+          Profit & Loss Statement
+        </button>
+        <button
+          className={`btn btn-sm ${activeReportTab === "gst" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveReportTab("gst")}
+        >
+          GST Tax Report (GSTR-1 / 2)
+        </button>
+        <button
+          className={`btn btn-sm ${activeReportTab === "stock" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setActiveReportTab("stock")}
+        >
+          Stock Valuation Summary
+        </button>
+      </div>
+
+      <div ref={reportRef} className="print-area">
+        <h3 style={{ marginBottom: 16 }}>{reportTitle}</h3>
+        {reportContent}
+      </div>
+      {previewOpen && (
+        <div className="modal-overlay" onClick={() => setPreviewOpen(false)}>
+          <div className="modal-card modal-lg" role="dialog" aria-modal="true" aria-label={`${reportTitle} preview`} onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header no-print" style={{ flexWrap: "wrap", gap: 10 }}>
+              <h3>{reportTitle} - Preview</h3>
+              <button className="btn btn-primary" disabled={exporting} onClick={downloadPdf}>
+                <Download size={16} /> {exporting ? "Preparing PDF..." : "Download PDF"}
+              </button>
+              <button className="btn-icon" aria-label="Close report preview" onClick={() => setPreviewOpen(false)}><X size={18} /></button>
+            </div>
+            <div className="modal-body" style={{ background: "white", color: "#111827" }}>
+              <h3 style={{ marginBottom: 16 }}>{reportTitle}</h3>
+              {reportContent}
             </div>
           </div>
         </div>
